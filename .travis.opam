@@ -1,0 +1,8 @@
+compiler:
+  - 4.01.0
+  - 4.02.3
+repository:
+  - ocamlfind
+  - lwt
+git:
+  - https://github.com/michipili/broken.git

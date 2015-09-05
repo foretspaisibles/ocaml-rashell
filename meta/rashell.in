@@ -1,0 +1,6 @@
+name="rashell"
+version="@VERSION@"
+description="Shell Programming Toolkit"
+requires = "lwt.unix str"
+archive(byte) = "rashell.cma"
+archive(native) = "rashell.cmxa"
