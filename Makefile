@@ -37,6 +37,7 @@ EXTERNAL+=		ocaml.findlib:lwt.ppx
 EXTERNAL+=		ocaml.findlib:str
 
 CONFIGURE+=		Makefile.config.in
+CONFIGURE+=		src/rashell_Configuration.ml.in
 
 .include "generic.project.mk"
 

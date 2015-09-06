@@ -24,11 +24,11 @@
 LIBRARY=		rashell
 
 SRCS=			rashell_Command.ml
+SRCS+=			rashell_Configuration.ml
 SRCS+=			rashell_Posix.ml
 SRCS+=			rashell_Mktemp.ml
 SRCS+=			rashell_Broken.ml
 
 .include "ocaml.lib.mk"
-
 
 ### End of file `Makefile'

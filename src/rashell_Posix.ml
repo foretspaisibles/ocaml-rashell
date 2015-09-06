@@ -22,6 +22,7 @@
    02111-1307, USA. *)
 
 open Lwt.Infix
+open Rashell_Configuration
 open Rashell_Command
 
 type file_kind = Unix.file_kind =
@@ -106,7 +107,7 @@ let find ?workdir ?env
     ?(follow = false) ?(depthfirst = false) ?(onefilesystem = false)
     p pathlst =
   let argv = Array.concat [
-      [| "/usr/bin/find" |];
+      [| ac_path_find |];
       (flag "-L" follow);
       (flag "-d" depthfirst);
       (flag "-x" onefilesystem);
@@ -114,12 +115,12 @@ let find ?workdir ?env
       (predicate_to_argv p)
     ]
   in
-  exec_query (command ?workdir ?env ("/usr/bin/find", argv))
+  exec_query (command ?workdir ?env (ac_path_find, argv))
 
 let cp ?workdir ?env
     ?(follow = false) ?(force = false) ?(recursive = false) pathlst dest =
   let argv = Array.concat [
-      [| "/bin/cp"; "-v" |];
+      [| ac_path_cp; "-v" |];
       (flag "-H" follow);
       (flag "-f" force);
       (flag "-R" recursive);
@@ -129,11 +130,11 @@ let cp ?workdir ?env
   in
   match pathlst with
   | [] -> Lwt_stream.of_list []
-  | _ -> exec_query (command ?workdir ?env ("/bin/cp", argv))
+  | _ -> exec_query (command ?workdir ?env (ac_path_cp, argv))
 
 let rm ?workdir ?env ?(force = false) ?(recursive = false) pathlst =
   let argv = Array.concat [
-      [| "/bin/rm"; "-v" |];
+      [| ac_path_rm; "-v" |];
       (flag "-f" force);
       (flag "-R" recursive);
       Array.of_list pathlst;
@@ -141,11 +142,11 @@ let rm ?workdir ?env ?(force = false) ?(recursive = false) pathlst =
   in
   match pathlst with
   | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env ("/bin/rm", argv))
+  | _ -> exec_query(command ?workdir ?env (ac_path_rm, argv))
 
 let mv ?workdir ?env ?(force = false) pathlst dest =
   let argv = Array.concat [
-      [| "/bin/mv"; "-v" |];
+      [| ac_path_mv; "-v" |];
       (flag "-f" force);
       Array.of_list pathlst;
       [| dest |]
@@ -153,12 +154,12 @@ let mv ?workdir ?env ?(force = false) pathlst dest =
   in
   match pathlst with
   | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env ("/bin/mv", argv))
+  | _ -> exec_query(command ?workdir ?env (ac_path_mv, argv))
 
 
 let sed ?workdir ?env ?(echo = true) script pathlst =
   let argv = Array.concat [
-      [| "sed" |];
+      [| ac_path_sed |];
       (flag "-n" (not echo));
       [| "-e"; script |];
       (Array.of_list pathlst);
@@ -166,11 +167,11 @@ let sed ?workdir ?env ?(echo = true) script pathlst =
   in
   match pathlst with
   | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env ("", argv))
+  | _ -> exec_query(command ?workdir ?env (ac_path_sed, argv))
 
 let sed_inplace ?workdir ?env ?(suffix = "") script pathlst =
   let argv = Array.concat [
-      [| "sed" |];
+      [| ac_path_sed |];
       [| "-i" ^ suffix |];
       [| "-e"; script |];
       (Array.of_list pathlst);
@@ -178,21 +179,21 @@ let sed_inplace ?workdir ?env ?(suffix = "") script pathlst =
   in
   match pathlst with
   | [] -> Lwt.return_unit
-  | _ -> (exec_utility (command ?workdir ?env ("", argv))
+  | _ -> (exec_utility (command ?workdir ?env (ac_path_sed, argv))
           >>= fun _ -> Lwt.return_unit)
 
 let sed_filter ?workdir ?env ?(echo = true) script =
   let argv = Array.concat [
-      [| "sed" |];
+      [| ac_path_sed |];
       (flag "-n" (not echo));
       [| "-e"; script |];
     ]
   in
-  exec_filter (command ?workdir ?env ("", argv))
+  exec_filter (command ?workdir ?env (ac_path_sed, argv))
 
 let _awk_argv ?fs ?(bindings = []) script pathlst =
   Array.concat ([
-      [| "awk"; |];
+      [| ac_path_awk; |];
       (maybe_transform (fun x -> [| "-F"; x |]) fs);
     ]
       @ (List.map (fun (k,v) -> [| "-v"; k ^"="^ v |]) bindings)
@@ -202,9 +203,9 @@ let _awk_argv ?fs ?(bindings = []) script pathlst =
 let awk ?workdir ?env ?fs ?bindings script pathlst =
   exec_query
     (command ?workdir ?env
-       ("", _awk_argv ?fs ?bindings script pathlst))
+       (ac_path_awk, _awk_argv ?fs ?bindings script pathlst))
 
 let awk_filter ?workdir ?env ?fs ?bindings script =
   exec_filter
     (command ?workdir ?env
-       ("", _awk_argv ?fs ?bindings script []))
+       (ac_path_awk, _awk_argv ?fs ?bindings script []))

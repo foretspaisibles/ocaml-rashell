@@ -29,9 +29,6 @@ eval $(opam config env)
 autoconf
 ./configure --prefix="${INSTALL_PREFIX}"
 bmake -I "${INSTALL_PREFIX}/share/bsdowl" all
-
-echo '===> sed:'
-which sed
 bmake -I "${INSTALL_PREFIX}/share/bsdowl" test
 
 ### End of file `travisci'
