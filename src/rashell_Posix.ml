@@ -57,6 +57,7 @@ type predicate =
   | Has_suffix of string
   | Is_owned_by_user of int
   | Is_owned_by_group of int
+  | Is_newer_than of string
   | Name of string
   | And of predicate list
   | Or of predicate list
@@ -65,17 +66,26 @@ type predicate =
 let progname () =
   Filename.basename Sys.executable_name
 
-let rec predicate_to_argv = function
+let flag f option = match option with
+  | true -> [| f |]
+  | false -> [| |]
+
+let maybe_transform f = function
+  | None -> [| |]
+  | Some(x) -> f(x)
+
+let rec find_predicate_to_argv = function
   | Prune -> [| "-prune" |]
-  | Has_kind(k) -> [| "-type"; letter_of_file_kind k |]
+  | Has_kind(k) -> [| "-type"; find_letter_of_file_kind k |]
   | Has_suffix(suff) -> [| "-name"; "*" ^ suff |]
   | Is_owned_by_user(uid) -> [| "-uid"; string_of_int uid |]
   | Is_owned_by_group(gid) -> [| "-gid"; string_of_int gid |]
+  | Is_newer_than(file) -> [| "-newer"; file |]
   | Name(glob) -> [| "-name"; glob |]
   | And(lst) -> combine "-a" lst
   | Or(lst) -> combine "-o" lst
-  | Not(p) -> Array.concat [ [| "!" |]; (predicate_to_argv p) ]
-and letter_of_file_kind = function
+  | Not(p) -> Array.concat [ [| "!" |]; (find_predicate_to_argv p) ]
+and find_letter_of_file_kind = function
   | S_REG -> "f"
   | S_DIR -> "d"
   | S_CHR -> "c"
@@ -89,19 +99,9 @@ and combine operator lst =
     match i, i mod 2 = 0, i / 2 with
     | 0, _, _ -> [| "(" |]
     | _, true, _ -> (if i = 2*n then [| ")" |] else [| operator |])
-    | _, false, k -> predicate_to_argv (List.nth lst k)
+    | _, false, k -> find_predicate_to_argv (List.nth lst k)
   in
   Array.concat (Array.to_list (Array.init (2*n + 1) init))
-
-let flag f option = match option with
-  | true -> [| f |]
-  | false -> [| |]
-
-let maybe_transform f = function
-  | None -> [| |]
-  | Some(x) -> f(x)
-
-
 
 let find ?workdir ?env
     ?(follow = false) ?(depthfirst = false) ?(onefilesystem = false)
@@ -112,7 +112,7 @@ let find ?workdir ?env
       (flag "-d" depthfirst);
       (flag "-x" onefilesystem);
       (match pathlst with [] -> [| "." |] | _ -> Array.of_list pathlst);
-      (predicate_to_argv p)
+      (find_predicate_to_argv p)
     ]
   in
   exec_query (command ?workdir ?env (ac_path_find, argv))

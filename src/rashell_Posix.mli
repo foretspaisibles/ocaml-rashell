@@ -59,6 +59,7 @@ type predicate =
   | Has_suffix of string
   | Is_owned_by_user of int
   | Is_owned_by_group of int
+  | Is_newer_than of string
   | Name of string (* Globbing pattern on basename *)
   | And of predicate list
   | Or of predicate list
