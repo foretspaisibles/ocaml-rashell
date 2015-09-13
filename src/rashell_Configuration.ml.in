@@ -36,6 +36,9 @@ let ac_path_grep =
 let ac_path_id =
   "@ID@"
 
+let ac_path_ln =
+  "@LN@"
+
 let ac_path_mv =
   "@MV@"
 

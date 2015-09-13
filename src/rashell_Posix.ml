@@ -157,6 +157,20 @@ let mv ?workdir ?env ?(force = false) pathlst dest =
   | _ -> exec_query(command ?workdir ?env (ac_path_mv, argv))
 
 
+let ln ?workdir ?env ?(force = false) ?(symbolic = false) pathlst dest =
+  let argv = Array.concat [
+      [| ac_path_ln; "-v" |];
+      (flag "-f" force);
+      (flag "-s" symbolic);
+      Array.of_list pathlst;
+      [| dest |]
+    ]
+  in
+  match pathlst with
+  | [] -> Lwt_stream.of_list []
+  | _ -> exec_query(command ?workdir ?env (ac_path_ln, argv))
+
+
 let sed ?workdir ?env ?(echo = true) script pathlst =
   let argv = Array.concat [
       [| ac_path_sed |];

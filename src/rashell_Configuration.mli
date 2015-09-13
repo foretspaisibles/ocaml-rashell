@@ -36,6 +36,9 @@ val ac_path_grep : string
 val ac_path_id : string
 (** The compile-time path to the id program. *)
 
+val ac_path_ln : string
+(** The compile-time path to the ln program. *)
+
 val ac_path_mv : string
 (** The compile-time path to the mv program. *)
 

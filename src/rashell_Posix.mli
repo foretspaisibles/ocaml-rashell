@@ -105,6 +105,16 @@ val mv :
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mv.html} mv(1)}
     command, called with the verbose flag. *)
 
+val ln :
+  ?workdir:string ->
+  ?env:string array ->
+  ?force:bool ->
+  ?symbolic:bool ->
+  string list -> string -> string Lwt_stream.t
+(** [ln pathlst dest] wrapper of the
+    {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html} ln(1)}
+    command, called with the verbose flag. *)
+
 
 (** {6 Sed & Awk} **)
 
