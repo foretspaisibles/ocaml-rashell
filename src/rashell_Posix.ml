@@ -173,10 +173,12 @@ let test ?(workdir = "") ?env ?(follow = false) predicate file =
       file
   in
   let cache = StatsCache.create (_test_weight predicate) in
-  let%lwt stat =
+  let stat () =
     (if follow then Lwt_unix.lstat else Lwt_unix.stat) actual_file
   in
-  Lwt.wrap (fun () -> _test_stat cache file stat predicate)
+  Lwt.try_bind stat
+    (fun s -> Lwt.wrap (fun () -> _test_stat cache file s predicate))
+    (fun _ -> Lwt.return_false)
 
 let cp ?workdir ?env
     ?(follow = false) ?(force = false) ?(recursive = false) pathlst dest =

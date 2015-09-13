@@ -83,7 +83,8 @@ val test :
   ?env:string array ->
   ?follow:bool ->
   predicate -> string -> bool Lwt.t
-(** Test a file. *)
+(** Test the meta-data of a file.  If the file does not exist, the
+    test evaluates to [false]. *)
 
 val cp :
   ?workdir:string ->
