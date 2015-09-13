@@ -39,6 +39,9 @@ let ac_path_id =
 let ac_path_ln =
   "@LN@"
 
+let ac_path_mktemp =
+  "@MKTEMP@"
+
 let ac_path_mv =
   "@MV@"
 

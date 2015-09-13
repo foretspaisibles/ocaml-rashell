@@ -39,6 +39,9 @@ val ac_path_id : string
 val ac_path_ln : string
 (** The compile-time path to the ln program. *)
 
+val ac_path_mktemp : string
+(** The compile-time path to the mktemp program. *)
+
 val ac_path_mv : string
 (** The compile-time path to the mv program. *)
 

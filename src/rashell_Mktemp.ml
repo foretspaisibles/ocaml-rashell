@@ -22,6 +22,7 @@
    02111-1307, USA. *)
 
 open Lwt.Infix
+open Rashell_Configuration
 open Rashell_Command
 open Rashell_Posix
 
@@ -49,9 +50,9 @@ let rmwrap ~directory f file =
 let mktemp ?(directory = false) () =
   let argv =
     if directory then
-      [| "/usr/bin/mktemp"; "-d"; tmptemplate() |]
+      [| ac_path_mktemp; "-d"; tmptemplate() |]
     else
-      [| "/usr/bin/mktemp"; tmptemplate() |]
+      [| ac_path_mktemp; tmptemplate() |]
   in
   exec_utility ~chomp:true (command ("", argv))
 
