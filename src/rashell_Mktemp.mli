@@ -31,3 +31,7 @@ val with_tmpfile : (string -> 'a Lwt.t) -> 'a Lwt.t
 
 val with_tmpdir : (string -> 'a Lwt.t) -> 'a Lwt.t
 (** Create a temporary directory and apply the given function on its name. *)
+
+val mktemp : ?directory:bool -> unit -> string Lwt.t
+(** Create a temporary file or directory using {i mktemp} and a
+    template depemnding on the current program name. *)
