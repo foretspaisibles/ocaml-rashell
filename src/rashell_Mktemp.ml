@@ -47,9 +47,9 @@ let rmwrap ~directory f file =
   Lwt.finalize (fun () -> f file) remove
 
 let with_tmpfile f =
-  exec_utility (command ("mktemp", [| "/usr/bin/mktemp"; tmptemplate () |]))
+  exec_utility ~chomp:true (command ("mktemp", [| "/usr/bin/mktemp"; tmptemplate () |]))
   >>= rmwrap ~directory:false f
 
 let with_tmpdir f =
-  exec_utility (command ("mktemp", [| "/usr/bin/mktemp"; "-d"; tmptemplate () |]))
+  exec_utility ~chomp:true (command ("mktemp", [| "/usr/bin/mktemp"; "-d"; tmptemplate () |]))
   >>= rmwrap ~directory:true f

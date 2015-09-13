@@ -126,6 +126,13 @@ end
 open Lwt.Infix
 open Lwt_process_internals
 
+let string_chomp s =
+  let n = String.length s in
+  if n > 0 && s.[n - 1] = '\n' then
+    String.sub s 0 (n - 1)
+  else
+    s
+
 let string_split delim s =
   let q = Queue.create () in
   let b = Buffer.create 100 in
@@ -260,14 +267,17 @@ let supervise f cmd =
   try f cmd
   with Sys_error(mesg) -> Lwt.fail (Error(cmd, WEXITED(127), mesg))
 
-let exec_utility_unsafe cmd =
+let exec_utility_unsafe ?(chomp = false) cmd =
   let p = open_process cmd in
   let%lwt a = Lwt_stream.to_string (recv_chars p p#stdout) in
   let%lwt () = outcome false cmd p in
-  Lwt.return a
+  if chomp then
+    Lwt.return(string_chomp a)
+  else
+    Lwt.return a
 
-let exec_utility cmd =
-  supervise exec_utility_unsafe cmd
+let exec_utility ?chomp cmd =
+  supervise (exec_utility_unsafe ?chomp) cmd
 
 let exec_test_unsafe cmd =
   let p = open_process cmd in
@@ -339,3 +349,6 @@ let expand_path name =
   in
   Buffer.add_substitute buf getenv newname;
   Buffer.contents buf
+
+let chomp s =
+  string_chomp s
