@@ -352,3 +352,34 @@ let expand_path name =
 
 let chomp s =
   string_chomp s
+
+(* Finite automatons recognising globbing patterns. *)
+module Glob =
+struct
+
+  let rec list_match pattern text =
+    match pattern, text with
+    | [], [] -> true
+    | '*' :: pattern_tl, [] -> list_match pattern_tl []
+    | '*' :: pattern_tl, text_hd :: text_tl ->
+        list_match pattern_tl text || list_match pattern text_tl
+    | '?' :: pattern_tl, _ :: text_tl -> list_match pattern_tl text_tl
+    | pattern_hd :: pattern_tl, text_hd :: text_tl ->
+        (pattern_hd = text_hd) && list_match pattern_tl text_tl
+    | _ -> false
+
+  let string_chars s =
+    let rec loop ax i =
+      if i < 0 then
+        ax
+      else
+        loop (s.[i] :: ax) (i-1)
+    in
+    loop [] (String.length s - 1)
+
+  let string_match pattern text =
+    list_match (string_chars pattern) (string_chars text)
+end
+
+let string_match_glob pattern text =
+  Glob.string_match pattern text

@@ -78,6 +78,13 @@ val find :
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/find.html} find(1)}
     command. *)
 
+val test :
+  ?workdir:string ->
+  ?env:string array ->
+  ?follow:bool ->
+  predicate -> string -> bool Lwt.t
+(** Test a file. *)
+
 val cp :
   ?workdir:string ->
   ?env:string array ->

@@ -126,6 +126,11 @@ val chomp : string -> string
 (** [chomp s] remove the last character of [s] if it is a newline
     character ['\n']. *)
 
+val string_match_glob : string -> string -> bool
+(** [string_match_glob pattern] is a predicate recognising strings
+    matched by [pattern].  The [pattern] can contain wildcard characters
+    ['?'] and ['*']. *)
+
 val is_debugged : string -> bool
 (** Predicate recognising componants selected for debugging output. *)
 
