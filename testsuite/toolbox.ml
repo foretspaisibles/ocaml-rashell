@@ -1,4 +1,4 @@
-(* Rashell_Mktemp -- Temporary files and directories
+(* Toolbox -- Toolbox for tests
 
    Rashell (https://github.com/michipili/rashell)
    This file is part of Rashell
@@ -21,17 +21,20 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA. *)
 
-(** Temporary files and directories.
+open Broken
+open Rashell_Broken
+open Rashell_Posix
+open Lwt.Infix
 
-    These facilities are interface to the {i mktemp(1)} program, which
-    is {i not} defined by POSIX but commonly found in Unix systems. *)
+let _make_file (directory, perm, path) =
+  let name =
+    List.fold_left Filename.concat "" path
+  in
+  if directory then
+    Lwt_unix.mkdir name perm
+  else
+    Lwt_unix.openfile name [ Unix.O_CREAT ] perm
+    >>= Lwt_unix.close
 
-val with_tmpfile : (string -> 'a Lwt.t) -> 'a Lwt.t
-(** Create a temporary file and apply the given function on its name. *)
-
-val with_tmpdir : (string -> 'a Lwt.t) -> 'a Lwt.t
-(** Create a temporary directory and apply the given function on its name. *)
-
-val mktemp : ?directory:bool -> unit -> string Lwt.t
-(** Create a temporary file or directory using {i mktemp} and a
-    template depemnding on the current program name. *)
+let populate spec =
+  Lwt_list.iter_s _make_file spec

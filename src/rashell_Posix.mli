@@ -59,6 +59,9 @@ type predicate =
   | Has_suffix of string
   | Is_owned_by_user of int
   | Is_owned_by_group of int
+  | Is_newer_than of string
+  | Has_exact_permission of int
+  | Has_at_least_permission of int
   | Name of string (* Globbing pattern on basename *)
   | And of predicate list
   | Or of predicate list
@@ -74,6 +77,14 @@ val find :
 (** [find predicate pathlst] wrapper of the
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/find.html} find(1)}
     command. *)
+
+val test :
+  ?workdir:string ->
+  ?env:string array ->
+  ?follow:bool ->
+  predicate -> string -> bool Lwt.t
+(** Test the meta-data of a file.  If the file does not exist, the
+    test evaluates to [false]. *)
 
 val cp :
   ?workdir:string ->
@@ -103,6 +114,16 @@ val mv :
   string list -> string -> string Lwt_stream.t
 (** [mv pathlst dest] wrapper of the
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mv.html} mv(1)}
+    command, called with the verbose flag. *)
+
+val ln :
+  ?workdir:string ->
+  ?env:string array ->
+  ?force:bool ->
+  ?symbolic:bool ->
+  string list -> string -> string Lwt_stream.t
+(** [ln pathlst dest] wrapper of the
+    {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html} ln(1)}
     command, called with the verbose flag. *)
 
 

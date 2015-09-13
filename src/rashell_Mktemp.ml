@@ -22,6 +22,7 @@
    02111-1307, USA. *)
 
 open Lwt.Infix
+open Rashell_Configuration
 open Rashell_Command
 open Rashell_Posix
 
@@ -46,10 +47,23 @@ let rmwrap ~directory f file =
   in
   Lwt.finalize (fun () -> f file) remove
 
+let mktemp ?(directory = false) () =
+  let argv =
+    if directory then
+      [| ac_path_mktemp; "-d"; tmptemplate() |]
+    else
+      [| ac_path_mktemp; tmptemplate() |]
+  in
+  exec_utility ~chomp:true (command ("", argv))
+
+let _with_tmpresource directory f =
+  mktemp ~directory ()
+  >>= rmwrap ~directory f
+
 let with_tmpfile f =
-  exec_utility (command ("mktemp", [| "/usr/bin/mktemp"; tmptemplate () |]))
+  mktemp ~directory:false ()
   >>= rmwrap ~directory:false f
 
 let with_tmpdir f =
-  exec_utility (command ("mktemp", [| "/usr/bin/mktemp"; "-d"; tmptemplate () |]))
+  mktemp ~directory:true ()
   >>= rmwrap ~directory:true f

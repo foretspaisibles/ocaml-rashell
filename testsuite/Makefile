@@ -23,7 +23,9 @@
 
 PROGRAM=		unit_testing
 
-SRCS=			testPosix.ml
+SRCS=			toolbox.ml
+SRCS+=			testMktemp.ml
+SRCS+=			testPosix.ml
 SRCS+=			main.ml
 
 OCAMLLFLAGS+=		-linkall

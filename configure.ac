@@ -30,7 +30,19 @@ AC_NEED_FINDLIB_PKG([broken])
 AC_NEED_FINDLIB_PKG([lwt.unix])
 AC_NEED_FINDLIB_PKG([lwt.ppx])
 AC_NEED_FINDLIB_PKG([str])
-AC_CONFIG_FILES([Makefile.config])
+
+AC_PATH_PROG_REQUIRE([AWK], [awk])
+AC_PATH_PROG_REQUIRE([CP], [cp])
+AC_PATH_PROG_REQUIRE([FIND], [find])
+AC_PATH_PROG_REQUIRE([GREP], [grep])
+AC_PATH_PROG_REQUIRE([ID], [id])
+AC_PATH_PROG_REQUIRE([LN], [ln])
+AC_PATH_PROG_REQUIRE([MKTEMP], [mktemp])
+AC_PATH_PROG_REQUIRE([MV], [mv])
+AC_PATH_PROG_REQUIRE([RM], [rm])
+AC_PATH_PROG_REQUIRE([SED], [sed])
+
+AC_CONFIG_FILES([Makefile.config src/rashell_Configuration.ml])
 AC_OUTPUT
 
 ### End of file `configure.ac'

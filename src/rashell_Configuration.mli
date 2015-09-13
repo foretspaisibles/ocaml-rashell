@@ -1,4 +1,4 @@
-(* Rashell_Mktemp -- Temporary files and directories
+(* Rashell_Configuration -- Compile time configuration
 
    Rashell (https://github.com/michipili/rashell)
    This file is part of Rashell
@@ -21,17 +21,32 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA. *)
 
-(** Temporary files and directories.
+val ac_path_awk : string
+(** The compile-time path to the awk program. *)
 
-    These facilities are interface to the {i mktemp(1)} program, which
-    is {i not} defined by POSIX but commonly found in Unix systems. *)
+val ac_path_cp : string
+(** The compile-time path to the cp program. *)
 
-val with_tmpfile : (string -> 'a Lwt.t) -> 'a Lwt.t
-(** Create a temporary file and apply the given function on its name. *)
+val ac_path_find : string
+(** The compile-time path to the find program. *)
 
-val with_tmpdir : (string -> 'a Lwt.t) -> 'a Lwt.t
-(** Create a temporary directory and apply the given function on its name. *)
+val ac_path_grep : string
+(** The compile-time path to the grep program. *)
 
-val mktemp : ?directory:bool -> unit -> string Lwt.t
-(** Create a temporary file or directory using {i mktemp} and a
-    template depemnding on the current program name. *)
+val ac_path_id : string
+(** The compile-time path to the id program. *)
+
+val ac_path_ln : string
+(** The compile-time path to the ln program. *)
+
+val ac_path_mktemp : string
+(** The compile-time path to the mktemp program. *)
+
+val ac_path_mv : string
+(** The compile-time path to the mv program. *)
+
+val ac_path_rm : string
+(** The compile-time path to the rm program. *)
+
+val ac_path_sed : string
+(** The compile-time path to the sed program. *)

@@ -1,4 +1,4 @@
-(* Rashell_Mktemp -- Temporary files and directories
+(* Rashell_Configuration -- Compile time configuration
 
    Rashell (https://github.com/michipili/rashell)
    This file is part of Rashell
@@ -21,17 +21,32 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA. *)
 
-(** Temporary files and directories.
+let ac_path_awk =
+  "@AWK@"
 
-    These facilities are interface to the {i mktemp(1)} program, which
-    is {i not} defined by POSIX but commonly found in Unix systems. *)
+let ac_path_cp =
+  "@CP@"
 
-val with_tmpfile : (string -> 'a Lwt.t) -> 'a Lwt.t
-(** Create a temporary file and apply the given function on its name. *)
+let ac_path_find =
+  "@FIND@"
 
-val with_tmpdir : (string -> 'a Lwt.t) -> 'a Lwt.t
-(** Create a temporary directory and apply the given function on its name. *)
+let ac_path_grep =
+  "@GREP@"
 
-val mktemp : ?directory:bool -> unit -> string Lwt.t
-(** Create a temporary file or directory using {i mktemp} and a
-    template depemnding on the current program name. *)
+let ac_path_id =
+  "@ID@"
+
+let ac_path_ln =
+  "@LN@"
+
+let ac_path_mktemp =
+  "@MKTEMP@"
+
+let ac_path_mv =
+  "@MV@"
+
+let ac_path_rm =
+  "@RM@"
+
+let ac_path_sed =
+  "@SED@"

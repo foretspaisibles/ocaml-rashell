@@ -91,8 +91,11 @@ val command : ?workdir:string -> ?env:string array -> string * (string array) ->
     given [program] and argument vector [argv]. *)
 
 (** Execute the given command and return its exit status, the content
-    of stdout and of stderr. *)
-val exec_utility : t -> string Lwt.t
+    of stdout and of stderr.
+
+    @param chomp Remove the last character if this is a newline
+    character (default [false]). *)
+val exec_utility : ?chomp:bool -> t -> string Lwt.t
 
 (** Execute the given command and test its exit status. An exit status
     of [0] indicates success of the test, [1] indicates failure of the
@@ -118,6 +121,15 @@ val expand_path : string -> string
 (** [expand_path name] expand a leading ['~'] and environment
     variables in [name]. If the environment variable {i HOME} is not
     set, then the root of the file-system os used. *)
+
+val chomp : string -> string
+(** [chomp s] remove the last character of [s] if it is a newline
+    character ['\n']. *)
+
+val string_match_glob : string -> string -> bool
+(** [string_match_glob pattern] is a predicate recognising strings
+    matched by [pattern].  The [pattern] can contain wildcard characters
+    ['?'] and ['*']. *)
 
 val is_debugged : string -> bool
 (** Predicate recognising componants selected for debugging output. *)

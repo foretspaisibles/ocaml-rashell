@@ -14,3 +14,13 @@
 m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS($@)])])
 m4_include([Library/Autoconf/bsdowl.m4])
 m4_include([Library/Autoconf/ocaml.m4])
+
+
+# AC_PATH_PROG_REQUIRE
+# --------------------
+# A variant of AC_PATCH_PROG which fails if it cannot find its
+# program.
+
+AC_DEFUN([AC_PATH_PROG_REQUIRE],
+[AC_PATH_PROG([$1], [$2], [no])dnl
+ AS_IF([test "${$1}" = 'no'], [AC_MSG_ERROR([Program $2 not found.])], [])])
