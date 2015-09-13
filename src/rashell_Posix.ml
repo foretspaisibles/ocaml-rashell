@@ -58,6 +58,8 @@ type predicate =
   | Is_owned_by_user of int
   | Is_owned_by_group of int
   | Is_newer_than of string
+  | Has_exact_permission of int
+  | Has_at_least_permission of int
   | Name of string
   | And of predicate list
   | Or of predicate list
@@ -81,6 +83,8 @@ let rec find_predicate_to_argv = function
   | Is_owned_by_user(uid) -> [| "-uid"; string_of_int uid |]
   | Is_owned_by_group(gid) -> [| "-gid"; string_of_int gid |]
   | Is_newer_than(file) -> [| "-newer"; file |]
+  | Has_exact_permission(perm) -> [| "-perm"; Printf.sprintf "%o" perm |]
+  | Has_at_least_permission(perm) -> [| "-perm"; Printf.sprintf "-%o" perm |]
   | Name(glob) -> [| "-name"; glob |]
   | And(lst) -> combine "-a" lst
   | Or(lst) -> combine "-o" lst

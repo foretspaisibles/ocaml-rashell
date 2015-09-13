@@ -60,6 +60,8 @@ type predicate =
   | Is_owned_by_user of int
   | Is_owned_by_group of int
   | Is_newer_than of string
+  | Has_exact_permission of int
+  | Has_at_least_permission of int
   | Name of string (* Globbing pattern on basename *)
   | And of predicate list
   | Or of predicate list
