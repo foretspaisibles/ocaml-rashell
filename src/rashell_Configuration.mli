@@ -49,3 +49,6 @@ val ac_path_rm : string
 
 val ac_path_sed : string
 (** The compile-time path to the sed program. *)
+
+val ac_path_test : string
+(** The compile-time path to the test program. *)

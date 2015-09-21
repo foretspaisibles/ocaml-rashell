@@ -33,6 +33,7 @@ AC_PATH_PROG_REQUIRE([MKTEMP], [mktemp])
 AC_PATH_PROG_REQUIRE([MV], [mv])
 AC_PATH_PROG_REQUIRE([RM], [rm])
 AC_PATH_PROG_REQUIRE([SED], [sed])
+AC_PATH_PROG_REQUIRE([TEST], [test])
 
 
 # Docker command line tool
