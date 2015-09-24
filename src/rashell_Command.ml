@@ -245,14 +245,14 @@ let outcome is_test cmd p =
   | WEXITED(1), true -> Lwt.return_unit
   | _ -> Lwt.fail(Error(cmd, status, stderr))
 
+let with_workdir path f x =
+  let currentdir = Sys.getcwd () in
+  let () = Sys.chdir path in
+  let answer = f x in
+  let () = Sys.chdir currentdir in
+  answer
+
 let open_process cmd =
-  let with_workdir path f x =
-      let currentdir = Sys.getcwd () in
-      let () = Sys.chdir path in
-      let answer = f x in
-      let () = Sys.chdir currentdir in
-      answer
-  in
   let open_process_in_cwd cmd =
     Lwt_process.open_process_full ?env:cmd.env (cmd.program, cmd.argv)
   in
@@ -310,6 +310,23 @@ let exec_filter cmd lines =
 
   | exception Sys_error(mesg) ->
       Lwt_stream.from (fun () -> Lwt.fail(Error(cmd, WEXITED(127), mesg)))
+
+let exec_shell_unsafe cmd =
+  let p =
+    let open_process cmd =
+      Lwt_process.open_process_none ?env:cmd.env (cmd.program, cmd.argv)
+    in
+    match cmd.workdir with
+    | None -> open_process cmd
+    | Some(otherdir) -> with_workdir otherdir open_process cmd
+  in
+  let%lwt status = p#status in
+  match status with
+  | WEXITED(0) -> Lwt.return_unit
+  | _ -> Printf.ksprintf Lwt.fail_with "%s.exec_shell_unsafe" __MODULE__
+
+let exec_shell cmd =
+  supervise exec_shell_unsafe cmd
 
 let which ?path file =
   let actual_path = match path with

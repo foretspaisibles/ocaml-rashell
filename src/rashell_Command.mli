@@ -110,6 +110,9 @@ val exec_query : t -> string Lwt_stream.t
     and its exit status with error output. *)
 val exec_filter : t -> string Lwt_stream.t -> string Lwt_stream.t
 
+(** Execute the given command as ashell and return its exit status. *)
+val exec_shell : t -> unit Lwt.t
+
 
 (** {6 Miscellaneous utilities} *)
 
