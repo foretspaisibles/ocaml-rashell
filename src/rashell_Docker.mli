@@ -24,6 +24,11 @@ val ps : unit -> container list Lwt.t
 val images : unit -> image list Lwt.t
 (** List images. *)
 
+val tags : unit -> (string * (string * string) list) list Lwt.t
+(** Examine tags in the local repository.  The result is an
+    association list mapping image ids to the (multiple)
+    [(repository, tag)] pointing to them. *)
+
 val stop : string list -> unit Lwt.t
 (** Stop a container, given its id. *)
 

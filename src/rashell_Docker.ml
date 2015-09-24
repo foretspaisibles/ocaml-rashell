@@ -17,6 +17,107 @@ open Rashell_Docker_t
 open Rashell_Docker_j
 open Lwt.Infix
 
+module Pool = Set.Make(String)
+
+
+let ps_keyword = [
+  "CONTAINER ID";
+  "IMAGE";
+  "COMMAND";
+  "CREATED";
+  "STATUS";
+  "PORTS";
+  "NAMES";
+]
+
+let image_keyword = [
+  "REPOSITORY";
+  "TAG";
+  "IMAGE ID";
+  "CREATED";
+  "VIRTUAL SIZE";
+]
+
+type field = {
+  field_name: string;
+  field_position: int;
+  field_width: int option;
+}
+
+let error fmt =
+  Printf.ksprintf (fun s -> failwith(__MODULE__ ^": "^s)) fmt
+
+let field_make kwlist header =
+  let open Str in
+  let pat =
+    regexp ("\\(" ^ (String.concat "\\|" kwlist) ^ "\\)\\( *\\)")
+  in
+  let rec loop ax i =
+    match string_match pat header i, i = String.length header with
+    | false, false -> error "field_make: Protocol mismatch."
+    | false, true -> ax
+    | true, _ ->
+        let field = {
+          field_name = matched_group 1 header;
+          field_position = i;
+          field_width =
+            if matched_group 2 header = "" then
+              None
+            else
+              Some (match_end () - 1 - i)
+        }
+        in
+        loop (field :: ax) (match_end())
+  in
+  loop [] 0
+
+let field_trim s =
+  let open Str in
+  global_replace (regexp "\\(^ *\\| *$\\)") "" s
+
+let field_get f s =
+  let get () =
+    match f.field_width with
+    | Some(k) -> String.sub s f.field_position k
+    | None -> String.sub s f.field_position
+                (String.length s - f.field_position)
+  in
+  try field_trim (get())
+  with _ -> error "field_extract: Protocol mismatch."
+
+let field_extract lst s =
+  List.map (fun f -> (f.field_name, field_get f s)) lst
+
+let to_alist name kwlist lst =
+  match lst with
+  | hd :: tl -> Lwt.return(
+      List.map (field_extract (field_make kwlist hd)) tl
+    )
+  | _ -> Lwt.fail_with(__MODULE__^": "^name^": Protocol mismatch.")
+
+let tags () =
+  let triple_of_alist alist =
+    let get field = List.assoc field alist in
+    try (get "IMAGE ID", (get "REPOSITORY", get "TAG"))
+    with Not_found -> failwith(__MODULE__^": images: Protocol mismatch.")
+  in
+  let pack lst =
+    let images =
+      Pool.elements(List.fold_right Pool.add (List.map fst lst) Pool.empty)
+    in
+    List.map
+      (fun x -> (x, List.map snd (List.filter (fun (k,_) -> k = x) lst)))
+      images
+  in
+  Lwt_stream.to_list
+    (exec_query
+       (command ("", [| ac_path_docker; "images"; "--all=true"; "--no-trunc=true"; |])))
+  >>= to_alist "images" image_keyword
+  >>= Lwt.wrap1 (List.map triple_of_alist)
+  >|= List.filter
+    (fun (_,(container, tag)) -> container <> "<none>" && tag <> "<none>")
+  >|= pack
+
 type restart_policy =
   | Restart_No
   | Restart_Always

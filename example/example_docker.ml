@@ -28,9 +28,15 @@ let listimages () =
   >>= map Yojson.Safe.prettify
   >>= Lwt_list.iter_s Lwt_io.printl
 
-let shell () =
-  let open Rashell_Command in
-  exec_shell(command ("", [| "/bin/sh" |]))
-  |> Lwt.map ignore
+let listtags () =
+  Rashell_Docker.tags ()
+  >>= Lwt_list.iter_s
+    (fun (image, tags) ->
+       Lwt_io.printf "%s:  %s\n" image
+         (String.concat ", "
+            (List.map (fun (container, tag) -> container^":"^tag) tags)))
 
-let () = Lwt_main.run (shell())
+let shell () =
+  Rashell_Docker.run_shell ~tty:true ~argv:[| "/bin/sh" |] "debian:jessie"
+
+let () = Lwt_main.run (listtags())
