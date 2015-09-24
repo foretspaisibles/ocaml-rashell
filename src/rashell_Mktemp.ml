@@ -5,23 +5,14 @@
 
    Copyright © 2015 Michael Grünewald
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation, with linking exceptions;
-   either version 3 of the License, or (at your option) any later
-   version. See COPYING file for details.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-   02111-1307, USA. *)
+   This file must be used under the terms of the CeCILL-B.
+   This source file is licensed as described in the file COPYING, which
+   you should have received as part of this distribution. The terms
+   are also available at
+   http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt *)
 
 open Lwt.Infix
+open Rashell_Configuration
 open Rashell_Command
 open Rashell_Posix
 
@@ -46,10 +37,23 @@ let rmwrap ~directory f file =
   in
   Lwt.finalize (fun () -> f file) remove
 
+let mktemp ?(directory = false) () =
+  let argv =
+    if directory then
+      [| ac_path_mktemp; "-d"; tmptemplate() |]
+    else
+      [| ac_path_mktemp; tmptemplate() |]
+  in
+  exec_utility ~chomp:true (command ("", argv))
+
+let _with_tmpresource directory f =
+  mktemp ~directory ()
+  >>= rmwrap ~directory f
+
 let with_tmpfile f =
-  exec_utility (command ("mktemp", [| "/usr/bin/mktemp"; tmptemplate () |]))
+  mktemp ~directory:false ()
   >>= rmwrap ~directory:false f
 
 let with_tmpdir f =
-  exec_utility (command ("mktemp", [| "/usr/bin/mktemp"; "-d"; tmptemplate () |]))
+  mktemp ~directory:true ()
   >>= rmwrap ~directory:true f

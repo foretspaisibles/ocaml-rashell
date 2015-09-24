@@ -1,4 +1,4 @@
-### release.mk -- Configuration for releases
+### Makefile -- Rashell example
 
 # Rashell (https://github.com/michipili/rashell)
 # This file is part of Rashell
@@ -11,13 +11,15 @@
 # are also available at
 # http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt
 
-.if !empty(THISMODULE:Mocaml.lib)
-COMPILE=		byte_code
-COMPILE+=		native_code
+PROGRAM=		example
+
+.if empty(WITH_DOCKER:Mno)
+PROGRAM+=		example_docker
 .endif
 
-.if !empty(THISMODULE:Mocaml.prog)
-COMPILE+=		native_code
-.endif
+install:
+	${NOP}
 
-### End of file `release.mk'
+.include "ocaml.prog.mk"
+
+### End of file `Makefile'

@@ -5,23 +5,14 @@
 
    Copyright © 2015 Michael Grünewald
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation, with linking exceptions;
-   either version 3 of the License, or (at your option) any later
-   version. See COPYING file for details.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-   02111-1307, USA. *)
+   This file must be used under the terms of the CeCILL-B.
+   This source file is licensed as described in the file COPYING, which
+   you should have received as part of this distribution. The terms
+   are also available at
+   http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt *)
 
 open Lwt.Infix
+open Rashell_Configuration
 open Rashell_Command
 
 type file_kind = Unix.file_kind =
@@ -50,12 +41,37 @@ type stats = Unix.stats = {
   st_ctime: float;
 }
 
+module StatsCache =
+struct
+  module Cache = Hashtbl.Make(struct
+      type t = string
+      let equal a b =
+        String.compare a b = 0
+      let hash = Hashtbl.hash
+    end)
+  type t = stats Cache.t
+  let create n =
+    Cache.create n
+  let _lookup stat acc f =
+    try Cache.find acc f
+    with Not_found ->
+      let s = stat f in
+      Cache.add acc f s;
+      s
+  let stat = _lookup Unix.stat
+  let lstat = _lookup Unix.lstat
+end
+
+
 type predicate =
   | Prune
   | Has_kind of file_kind
   | Has_suffix of string
   | Is_owned_by_user of int
   | Is_owned_by_group of int
+  | Is_newer_than of string
+  | Has_exact_permission of int
+  | Has_at_least_permission of int
   | Name of string
   | And of predicate list
   | Or of predicate list
@@ -64,17 +80,28 @@ type predicate =
 let progname () =
   Filename.basename Sys.executable_name
 
-let rec predicate_to_argv = function
+let flag f option = match option with
+  | true -> [| f |]
+  | false -> [| |]
+
+let maybe_transform f = function
+  | None -> [| |]
+  | Some(x) -> f(x)
+
+let rec find_predicate_to_argv = function
   | Prune -> [| "-prune" |]
-  | Has_kind(k) -> [| "-type"; letter_of_file_kind k |]
+  | Has_kind(k) -> [| "-type"; find_letter_of_file_kind k |]
   | Has_suffix(suff) -> [| "-name"; "*" ^ suff |]
   | Is_owned_by_user(uid) -> [| "-uid"; string_of_int uid |]
   | Is_owned_by_group(gid) -> [| "-gid"; string_of_int gid |]
+  | Is_newer_than(file) -> [| "-newer"; file |]
+  | Has_exact_permission(perm) -> [| "-perm"; Printf.sprintf "%o" perm |]
+  | Has_at_least_permission(perm) -> [| "-perm"; Printf.sprintf "-%o" perm |]
   | Name(glob) -> [| "-name"; glob |]
   | And(lst) -> combine "-a" lst
   | Or(lst) -> combine "-o" lst
-  | Not(p) -> Array.concat [ [| "!" |]; (predicate_to_argv p) ]
-and letter_of_file_kind = function
+  | Not(p) -> Array.concat [ [| "!" |]; (find_predicate_to_argv p) ]
+and find_letter_of_file_kind = function
   | S_REG -> "f"
   | S_DIR -> "d"
   | S_CHR -> "c"
@@ -88,38 +115,65 @@ and combine operator lst =
     match i, i mod 2 = 0, i / 2 with
     | 0, _, _ -> [| "(" |]
     | _, true, _ -> (if i = 2*n then [| ")" |] else [| operator |])
-    | _, false, k -> predicate_to_argv (List.nth lst k)
+    | _, false, k -> find_predicate_to_argv (List.nth lst k)
   in
   Array.concat (Array.to_list (Array.init (2*n + 1) init))
-
-let flag f option = match option with
-  | true -> [| f |]
-  | false -> [| |]
-
-let maybe_transform f = function
-  | None -> [| |]
-  | Some(x) -> f(x)
-
-
 
 let find ?workdir ?env
     ?(follow = false) ?(depthfirst = false) ?(onefilesystem = false)
     p pathlst =
   let argv = Array.concat [
-      [| "/usr/bin/find" |];
+      [| ac_path_find |];
       (flag "-L" follow);
       (flag "-d" depthfirst);
       (flag "-x" onefilesystem);
       (match pathlst with [] -> [| "." |] | _ -> Array.of_list pathlst);
-      (predicate_to_argv p)
+      (find_predicate_to_argv p)
     ]
   in
-  exec_query (command ?workdir ?env ("/usr/bin/find", argv))
+  exec_query (command ?workdir ?env (ac_path_find, argv))
+
+let rec _test_stat cache name x = function
+  | Prune -> true
+  | Has_kind(k) -> x.st_kind = k
+  | Has_suffix(suff) -> string_match_glob ("*" ^ suff) suff
+  | Is_owned_by_user(uid) -> x.st_uid = uid
+  | Is_owned_by_group(gid) ->x.st_gid = gid
+  | Is_newer_than(file) ->
+      (StatsCache.stat cache file).st_mtime < x.st_mtime
+  | Has_exact_permission(perm) -> x.st_perm = perm
+  | Has_at_least_permission(perm) -> (x.st_perm land perm) = perm
+  | Name(glob) -> string_match_glob glob name
+  | And(lst) -> List.for_all (_test_stat cache name x) lst
+  | Or(lst) -> List.exists (_test_stat cache name x) lst
+  | Not(p) -> not(_test_stat cache name x p)
+
+let rec _test_weight = function
+  | Is_newer_than(_) -> 1
+  | And(lst)
+  | Or(lst) -> List.fold_left (fun n p -> n + _test_weight p) 0 lst
+  | Not(p) -> _test_weight p
+  | _ -> 0
+
+let test ?(workdir = "") ?env ?(follow = false) predicate file =
+  let actual_file =
+    if Filename.is_relative file then
+      Filename.concat workdir file
+    else
+      file
+  in
+  let cache = StatsCache.create (_test_weight predicate) in
+  let stat () =
+    (if follow then Lwt_unix.lstat else Lwt_unix.stat) actual_file
+  in
+  Lwt.try_bind stat
+    (fun s -> Lwt.wrap (fun () -> _test_stat cache file s predicate))
+    (fun _ -> Lwt.return_false)
 
 let cp ?workdir ?env
     ?(follow = false) ?(force = false) ?(recursive = false) pathlst dest =
   let argv = Array.concat [
-      [| "/bin/cp"; "-v" |];
+      [| ac_path_cp; "-v" |];
       (flag "-H" follow);
       (flag "-f" force);
       (flag "-R" recursive);
@@ -129,11 +183,11 @@ let cp ?workdir ?env
   in
   match pathlst with
   | [] -> Lwt_stream.of_list []
-  | _ -> exec_query (command ?workdir ?env ("/bin/cp", argv))
+  | _ -> exec_query (command ?workdir ?env (ac_path_cp, argv))
 
 let rm ?workdir ?env ?(force = false) ?(recursive = false) pathlst =
   let argv = Array.concat [
-      [| "/bin/rm"; "-v" |];
+      [| ac_path_rm; "-v" |];
       (flag "-f" force);
       (flag "-R" recursive);
       Array.of_list pathlst;
@@ -141,11 +195,11 @@ let rm ?workdir ?env ?(force = false) ?(recursive = false) pathlst =
   in
   match pathlst with
   | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env ("/bin/rm", argv))
+  | _ -> exec_query(command ?workdir ?env (ac_path_rm, argv))
 
 let mv ?workdir ?env ?(force = false) pathlst dest =
   let argv = Array.concat [
-      [| "/bin/mv"; "-v" |];
+      [| ac_path_mv; "-v" |];
       (flag "-f" force);
       Array.of_list pathlst;
       [| dest |]
@@ -153,12 +207,26 @@ let mv ?workdir ?env ?(force = false) pathlst dest =
   in
   match pathlst with
   | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env ("/bin/mv", argv))
+  | _ -> exec_query(command ?workdir ?env (ac_path_mv, argv))
+
+
+let ln ?workdir ?env ?(force = false) ?(symbolic = false) pathlst dest =
+  let argv = Array.concat [
+      [| ac_path_ln; "-v" |];
+      (flag "-f" force);
+      (flag "-s" symbolic);
+      Array.of_list pathlst;
+      [| dest |]
+    ]
+  in
+  match pathlst with
+  | [] -> Lwt_stream.of_list []
+  | _ -> exec_query(command ?workdir ?env (ac_path_ln, argv))
 
 
 let sed ?workdir ?env ?(echo = true) script pathlst =
   let argv = Array.concat [
-      [| "sed" |];
+      [| ac_path_sed |];
       (flag "-n" (not echo));
       [| "-e"; script |];
       (Array.of_list pathlst);
@@ -166,11 +234,11 @@ let sed ?workdir ?env ?(echo = true) script pathlst =
   in
   match pathlst with
   | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env ("", argv))
+  | _ -> exec_query(command ?workdir ?env (ac_path_sed, argv))
 
 let sed_inplace ?workdir ?env ?(suffix = "") script pathlst =
   let argv = Array.concat [
-      [| "sed" |];
+      [| ac_path_sed |];
       [| "-i" ^ suffix |];
       [| "-e"; script |];
       (Array.of_list pathlst);
@@ -178,21 +246,21 @@ let sed_inplace ?workdir ?env ?(suffix = "") script pathlst =
   in
   match pathlst with
   | [] -> Lwt.return_unit
-  | _ -> (exec_utility (command ?workdir ?env ("", argv))
+  | _ -> (exec_utility (command ?workdir ?env (ac_path_sed, argv))
           >>= fun _ -> Lwt.return_unit)
 
 let sed_filter ?workdir ?env ?(echo = true) script =
   let argv = Array.concat [
-      [| "sed" |];
+      [| ac_path_sed |];
       (flag "-n" (not echo));
       [| "-e"; script |];
     ]
   in
-  exec_filter (command ?workdir ?env ("", argv))
+  exec_filter (command ?workdir ?env (ac_path_sed, argv))
 
 let _awk_argv ?fs ?(bindings = []) script pathlst =
   Array.concat ([
-      [| "awk"; |];
+      [| ac_path_awk; |];
       (maybe_transform (fun x -> [| "-F"; x |]) fs);
     ]
       @ (List.map (fun (k,v) -> [| "-v"; k ^"="^ v |]) bindings)
@@ -202,9 +270,9 @@ let _awk_argv ?fs ?(bindings = []) script pathlst =
 let awk ?workdir ?env ?fs ?bindings script pathlst =
   exec_query
     (command ?workdir ?env
-       ("", _awk_argv ?fs ?bindings script pathlst))
+       (ac_path_awk, _awk_argv ?fs ?bindings script pathlst))
 
 let awk_filter ?workdir ?env ?fs ?bindings script =
   exec_filter
     (command ?workdir ?env
-       ("", _awk_argv ?fs ?bindings script []))
+       (ac_path_awk, _awk_argv ?fs ?bindings script []))

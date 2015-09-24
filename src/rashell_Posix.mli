@@ -5,21 +5,11 @@
 
    Copyright © 2015 Michael Grünewald
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation, with linking exceptions;
-   either version 3 of the License, or (at your option) any later
-   version. See COPYING file for details.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-   02111-1307, USA. *)
+   This file must be used under the terms of the CeCILL-B.
+   This source file is licensed as described in the file COPYING, which
+   you should have received as part of this distribution. The terms
+   are also available at
+   http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt *)
 
 
 (** {6 File utilities} *)
@@ -59,6 +49,9 @@ type predicate =
   | Has_suffix of string
   | Is_owned_by_user of int
   | Is_owned_by_group of int
+  | Is_newer_than of string
+  | Has_exact_permission of int
+  | Has_at_least_permission of int
   | Name of string (* Globbing pattern on basename *)
   | And of predicate list
   | Or of predicate list
@@ -74,6 +67,14 @@ val find :
 (** [find predicate pathlst] wrapper of the
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/find.html} find(1)}
     command. *)
+
+val test :
+  ?workdir:string ->
+  ?env:string array ->
+  ?follow:bool ->
+  predicate -> string -> bool Lwt.t
+(** Test the meta-data of a file.  If the file does not exist, the
+    test evaluates to [false]. *)
 
 val cp :
   ?workdir:string ->
@@ -103,6 +104,16 @@ val mv :
   string list -> string -> string Lwt_stream.t
 (** [mv pathlst dest] wrapper of the
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mv.html} mv(1)}
+    command, called with the verbose flag. *)
+
+val ln :
+  ?workdir:string ->
+  ?env:string array ->
+  ?force:bool ->
+  ?symbolic:bool ->
+  string list -> string -> string Lwt_stream.t
+(** [ln pathlst dest] wrapper of the
+    {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html} ln(1)}
     command, called with the verbose flag. *)
 
 

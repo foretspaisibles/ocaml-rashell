@@ -1,4 +1,4 @@
-(* Main -- Entry point of the testsuite
+(* Toolbox -- Toolbox for tests
 
    Rashell (https://github.com/michipili/rashell)
    This file is part of Rashell
@@ -11,4 +11,20 @@
    are also available at
    http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt *)
 
-let () = Broken.main ()
+open Broken
+open Rashell_Broken
+open Rashell_Posix
+open Lwt.Infix
+
+let _make_file (directory, perm, path) =
+  let name =
+    List.fold_left Filename.concat "" path
+  in
+  if directory then
+    Lwt_unix.mkdir name perm
+  else
+    Lwt_unix.openfile name [ Unix.O_CREAT ] perm
+    >>= Lwt_unix.close
+
+let populate spec =
+  Lwt_list.iter_s _make_file spec

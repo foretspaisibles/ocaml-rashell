@@ -1,4 +1,4 @@
-(* Main -- Entry point of the testsuite
+(* Rashell_Configuration -- Compile time configuration
 
    Rashell (https://github.com/michipili/rashell)
    This file is part of Rashell
@@ -11,4 +11,35 @@
    are also available at
    http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt *)
 
-let () = Broken.main ()
+let ac_path_awk =
+  "@AWK@"
+
+let ac_path_cp =
+  "@CP@"
+
+let ac_path_docker =
+  "@DOCKER@"
+
+let ac_path_find =
+  "@FIND@"
+
+let ac_path_grep =
+  "@GREP@"
+
+let ac_path_id =
+  "@ID@"
+
+let ac_path_ln =
+  "@LN@"
+
+let ac_path_mktemp =
+  "@MKTEMP@"
+
+let ac_path_mv =
+  "@MV@"
+
+let ac_path_rm =
+  "@RM@"
+
+let ac_path_sed =
+  "@SED@"

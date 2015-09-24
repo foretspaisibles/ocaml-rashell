@@ -1,0 +1,76 @@
+(* Rashell_Docker -- Docker support
+
+   Rashell (https://github.com/michipili/rashell)
+   This file is part of Rashell
+
+   Copyright © 2015 Michael Grünewald
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation, with linking exceptions;
+   either version 3 of the License, or (at your option) any later
+   version. See COPYING file for details.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+   02111-1307, USA. *)
+
+type config = {
+  attach_stderr			<json name="AttachStderr">:	bool;
+  attach_stdout			<json name="AttachStdout">:	bool;
+  attach_stdin			<json name="AttachStdin">:	bool;
+  ?cmd				<json name="Cmd">:		string list nullable;
+  cpu_shares			<json name="CpuShares">:	int;
+  domainname			<json name="Domainname">:	string;
+  ?entrypoint			<json name="EntryPoint">:	string list <ocaml repr="array"> nullable;
+  ?env				<json name="Env">:		string list <ocaml repr="array"> nullable;
+  hostname			<json name="Hostname">:		string;
+  image				<json name="Image">:		string;
+  working_dir			<json name="WorkingDir">:	string;
+} <ocaml field_prefix="config_">
+
+type image = {
+  ?config			<json name="Config">:		config nullable;
+  id				<json name="Id">:		string;
+  comment			<json name="Comment">:		string;
+  created			<json name="Created">:		string;
+  ?parent			<json name="String">:		string nullable;
+  virtual_size			<json name="VirtualSize">:	int;
+  size				<json name="Size">:		int;
+  docker_version		<json name="DockerVersion">:	string;
+} <ocaml field_prefix="image_">
+
+type state = {
+  error				<json name="Error">:		string;
+  exit_code			<json name="ExitCode">:		int;
+  finished_at			<json name="FinishedAt">:	string;
+  started_at			<json name="StartedAt">:	string;
+  pid				<json name="Pid">:		int;
+  running			<json name="Running">:		bool;
+  restarting			<json name="Restarting">:	bool;
+  paused			<json name="Paused">:		bool;
+  oomkilled			<json name="OOMKilled">:	bool;
+} <ocaml field_prefix="state_">
+
+type container = {
+  config			<json name="Config">:		config;
+  id				<json name="Id">:		string;
+  image				<json name="Image">:		string;
+  name				<json name="Name">:		string;
+  created			<json name="Created">:		string;
+  args				<json name="Args">:		string list;
+  path				<json name="Path">:		string;
+  restart_count			<json name="RestartCount">:	int;
+  volumes			<json name="Volumes">:		(string * string) list <json repr="object">;
+  volumes_rw			<json name="VolumesRW">:	(string * bool) list <json repr="object">;
+  state				<json name="State">:		state;
+} <ocaml field_prefix="container_">
+
+type containers = container list
+type images = image list

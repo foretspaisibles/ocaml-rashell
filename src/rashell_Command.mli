@@ -5,21 +5,11 @@
 
    Copyright © 2015 Michael Grünewald
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation, with linking exceptions;
-   either version 3 of the License, or (at your option) any later
-   version. See COPYING file for details.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-   02111-1307, USA. *)
+   This file must be used under the terms of the CeCILL-B.
+   This source file is licensed as described in the file COPYING, which
+   you should have received as part of this distribution. The terms
+   are also available at
+   http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt *)
 
 (** Computations consuming a subprocess.
 
@@ -91,8 +81,11 @@ val command : ?workdir:string -> ?env:string array -> string * (string array) ->
     given [program] and argument vector [argv]. *)
 
 (** Execute the given command and return its exit status, the content
-    of stdout and of stderr. *)
-val exec_utility : t -> string Lwt.t
+    of stdout and of stderr.
+
+    @param chomp Remove the last character if this is a newline
+    character (default [false]). *)
+val exec_utility : ?chomp:bool -> t -> string Lwt.t
 
 (** Execute the given command and test its exit status. An exit status
     of [0] indicates success of the test, [1] indicates failure of the
@@ -107,6 +100,9 @@ val exec_query : t -> string Lwt_stream.t
     and its exit status with error output. *)
 val exec_filter : t -> string Lwt_stream.t -> string Lwt_stream.t
 
+(** Execute the given command as ashell and return its exit status. *)
+val exec_shell : t -> unit Lwt.t
+
 
 (** {6 Miscellaneous utilities} *)
 
@@ -118,6 +114,15 @@ val expand_path : string -> string
 (** [expand_path name] expand a leading ['~'] and environment
     variables in [name]. If the environment variable {i HOME} is not
     set, then the root of the file-system os used. *)
+
+val chomp : string -> string
+(** [chomp s] remove the last character of [s] if it is a newline
+    character ['\n']. *)
+
+val string_match_glob : string -> string -> bool
+(** [string_match_glob pattern] is a predicate recognising strings
+    matched by [pattern].  The [pattern] can contain wildcard characters
+    ['?'] and ['*']. *)
 
 val is_debugged : string -> bool
 (** Predicate recognising componants selected for debugging output. *)
