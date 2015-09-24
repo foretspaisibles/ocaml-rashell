@@ -13,6 +13,10 @@
 
 PROGRAM=		example
 
+.if empty(WITH_DOCKER:Mno)
+PROGRAM+=		example_docker
+.endif
+
 install:
 	${NOP}
 

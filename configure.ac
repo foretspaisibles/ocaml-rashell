@@ -47,9 +47,11 @@ AC_ARG_WITH([docker],
       ;;
     yes)
       AC_PATH_PROG_REQUIRE([DOCKER], [docker])
+      AC_NEED_FINDLIB_PKG([atdgen])
       ;;
     *)
       DOCKER="${with_docker}"
+      AC_NEED_FINDLIB_PKG([atdgen])
       ;;
     esac;],
   [WITH_DOCKER='no'; DOCKER='/nonexistant';])

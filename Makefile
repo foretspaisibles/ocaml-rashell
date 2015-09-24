@@ -26,6 +26,7 @@ EXTERNAL=		ocaml.findlib:broken
 EXTERNAL+=		ocaml.findlib:lwt.unix
 EXTERNAL+=		ocaml.findlib:lwt.ppx
 EXTERNAL+=		ocaml.findlib:str
+EXTERNAL+=		ocaml.findlib:atdgen
 
 CONFIGURE+=		Makefile.config.in
 CONFIGURE+=		src/rashell_Configuration.ml.in
