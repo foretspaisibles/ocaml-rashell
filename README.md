@@ -120,11 +120,10 @@ increase rapidly.
 
 ## Free software
 
-It is written by Michael Grünewald and is distributed as a free
-software: copying it and redistributing it is very much welcome under
-conditions of the [LGPL][licence-url] licence agreement, found in the
-[COPYING][licence-main] and [COPYING.LESSER][licence-lesser] files of
-the distribution.
+Rashell is free software: copying it and redistributing it is
+very much welcome under conditions of the [CeCILL-B][licence-url]
+licence agreement, found in the [COPYING][licence-en] and
+[COPYING-FR][licence-fr] files of the distribution.
 
 
 ## Setup guide
@@ -172,9 +171,10 @@ Step 7 requires that you can `su -` if you are not already `root`.
 
 Michael Grünewald in Bonn, on September 5, 2015
 
-  [licence-url]:        http://www.gnu.org/licenses/lgpl-3.0.en.html
-  [licence-main]:       COPYING
-  [licence-lesser]:     COPYING.LESSER
+
+  [licence-url]:        http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+  [licence-en]:         COPYING
+  [licence-fr]:         COPYING-FR
   [bsdowl-home]:        https://github.com/michipili/bsdowl
   [bsdowl-install]:     https://github.com/michipili/bsdowl/wiki/Install
   [lwt-home]:           http://ocsigen.org/lwt/
