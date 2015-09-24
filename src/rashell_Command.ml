@@ -5,126 +5,72 @@
 
    Copyright © 2015 Michael Grünewald
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation, with linking exceptions;
-   either version 3 of the License, or (at your option) any later
-   version. See COPYING file for details.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-   02111-1307, USA. *)
-
-
-(* The definitions packed in the module Lwt_process_internals are
-   derived from the definitions with the same name found in the
-   module Lwt_process, © 2009 by Jérémie Dimino, http://www.ocsigen.org/lwt. *)
-
-module Lwt_process_internals =
-struct
-  let ignore_close ch =
-    ignore (Lwt_io.close ch)
-
-  let send f p data =
-    let channel = p#stdin in
-    Lwt.finalize
-      (fun () -> f channel data)
-      (fun () -> Lwt_io.close channel)
-
-  let read_opt read ic =
-    let open Lwt.Infix in
-    Lwt.catch
-      (fun () -> read ic >|= fun x -> Some x)
-      (function
-        | Unix.Unix_error (Unix.EPIPE, _, _) | End_of_file ->
-            Lwt.return_none
-        | exn -> Lwt.fail exn)
-
-  let recv_chars pr ic =
-    let open Lwt.Infix in
-    Gc.finalise ignore_close ic;
-    Lwt_stream.from
-      (fun _ ->
-         read_opt Lwt_io.read_char ic >>= fun x ->
-         if x = None then begin
-           Lwt_io.close ic >>= fun () ->
-           Lwt.return x
-         end else
-           Lwt.return x)
-
-  let recv_lines pr ic =
-    let open Lwt.Infix in
-    Gc.finalise ignore_close ic;
-    Lwt_stream.from
-      (fun _ ->
-         read_opt Lwt_io.read_line ic >>= fun x ->
-         if x = None then begin
-           Lwt_io.close ic >>= fun () ->
-           Lwt.return x
-         end else
-           Lwt.return x)
-
-  type 'a map_state =
-    | Init
-    | Save of 'a option Lwt.t
-    | Done
-
-
-  (* Monitor the thread [sender] in the stream [st] so write errors are
-     reported. When the stream is exhausted, we wait for the sender
-     to terminate.
-
-     In this variant of the original function, we wait for join on the
-     sender at the end of the stream, so that we have the chance to
-     see any error it would throw. *)
-
-  let monitor sender st =
-    let open Lwt.Infix in
-    let sender = sender >|= fun () -> None in
-    let state = ref Init in
-    Lwt_stream.from
-      (fun () ->
-         match !state with
-         | Init ->
-             let getter =
-               Lwt.apply Lwt_stream.get st
-               >>= function
-               | None -> (sender >>= fun _ -> Lwt.return_none)
-               | Some(x) -> Lwt.return_some x
-             in
-             let result _ =
-               match Lwt.state sender with
-               | Lwt.Sleep ->
-                   (* The sender is still sleeping, behave as the
-                      getter. *)
-                   getter
-               | Lwt.Return _ ->
-                   (* The sender terminated successfully, we are
-                      done monitoring it. *)
-                   state := Done;
-                   getter
-               | Lwt.Fail _ ->
-                   (* The sender failed, behave as the sender for
-                      this element and save current getter. *)
-                   state := Save getter;
-                   sender
-             in
-             Lwt.try_bind (fun () -> Lwt.choose [sender; getter]) result result
-         | Save t ->
-             state := Done;
-             t
-         | Done ->
-             Lwt_stream.get st)
-end
+   This file must be used under the terms of the CeCILL-B.
+   This source file is licensed as described in the file COPYING, which
+   you should have received as part of this distribution. The terms
+   are also available at
+   http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt *)
 
 open Lwt.Infix
-open Lwt_process_internals
+
+let maybe_return x =
+  Lwt.return(Some(x))
+
+let maybe_fail _ =
+  Lwt.return_none
+
+let send_lines p data =
+  let channel = p#stdin in
+  Lwt.finalize
+    (fun () -> Lwt_io.write_lines channel data)
+    (fun () -> Lwt_io.close channel)
+
+let recv_anything f p channel =
+  let streamf _ =
+    Lwt.catch
+      (function () -> f channel >>= maybe_return)
+      (function
+        | Unix.Unix_error (Unix.EPIPE, _, _)
+        | End_of_file ->
+            Lwt_io.close channel >>= fun _ -> Lwt.return_none
+        | exn -> Lwt.fail exn)
+  in
+  Gc.finalise (fun x -> ignore(Lwt_io.close x)) channel;
+  Lwt_stream.from streamf
+
+let recv_chars p channel =
+  recv_anything Lwt_io.read_char p channel
+
+let recv_lines p channel =
+  recv_anything Lwt_io.read_line p channel
+
+type 'a monitor_state =
+  | Monitor_Initial
+  | Monitor_Remember of 'a option Lwt.t
+  | Monitor_Final
+
+let monitor sender stream =
+  let sentinel = sender >>= maybe_fail in
+  let state = ref Monitor_Initial in
+  let streamf () =
+    match !state with
+    | Monitor_Initial ->
+        let getter =
+          match%lwt Lwt.apply Lwt_stream.get stream with
+          | Some(x) -> Lwt.return_some x
+          | None -> sentinel
+        in
+        let answer _ =
+          match Lwt.state sentinel with
+             | Lwt.Sleep -> getter
+             | Lwt.Return _ -> (state := Monitor_Final; getter)
+             | Lwt.Fail _ -> (state := Monitor_Remember(getter); sentinel)
+           in
+           Lwt.try_bind (fun () -> Lwt.choose [sentinel; getter]) answer answer
+    | Monitor_Remember(getter) -> (state := Monitor_Final; getter)
+    | Monitor_Final -> Lwt_stream.get stream
+  in
+  Lwt_stream.from streamf
 
 let string_chomp s =
   let n = String.length s in
@@ -302,7 +248,7 @@ let exec_filter cmd lines =
   match open_process cmd with
   | p ->
       let sender =
-        let%lwt () = send Lwt_io.write_lines p lines
+        let%lwt () = send_lines p lines
         and () = outcome false cmd p in
         Lwt.return_unit
       in
