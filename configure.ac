@@ -32,6 +32,28 @@ AC_PATH_PROG_REQUIRE([MV], [mv])
 AC_PATH_PROG_REQUIRE([RM], [rm])
 AC_PATH_PROG_REQUIRE([SED], [sed])
 
+
+# Docker command line tool
+#
+#   Support of Docker using the command line tool.
+
+AC_ARG_WITH([docker],
+  [AS_HELP_STRING([--with-docker],
+    [add Docker support through the command-line tool.])],
+  [WITH_DOCKER=${with_docker}
+    case $with_docker in
+    no)
+      DOCKER='/nonexistant'
+      ;;
+    yes)
+      AC_PATH_PROG_REQUIRE([DOCKER], [docker])
+      ;;
+    *)
+      DOCKER="${with_docker}"
+      ;;
+    esac;],
+  [WITH_DOCKER='no'; DOCKER='/nonexistant';])
+
 AC_CONFIG_FILES([Makefile.config src/rashell_Configuration.ml])
 AC_OUTPUT
 
