@@ -24,6 +24,7 @@
 LIBRARY=		rashell
 
 SRCS=			rashell_Command.ml
+SRCS+=			rashell_Timestamp.ml
 SRCS+=			rashell_Configuration.ml
 SRCS+=			rashell_Posix.ml
 SRCS+=			rashell_Mktemp.ml
