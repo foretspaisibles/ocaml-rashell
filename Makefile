@@ -12,7 +12,7 @@
 # http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt
 
 PACKAGE=		rashell
-VERSION=		0.1.0
+VERSION=		0.2.0-current
 OFFICER=		michipili@gmail.com
 
 MODULE=			ocaml.lib:src
