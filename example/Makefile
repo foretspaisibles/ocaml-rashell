@@ -1,4 +1,4 @@
-### Makefile -- Project Rashell
+### Makefile -- Rashell example
 
 # Rashell (https://github.com/michipili/rashell)
 # This file is part of Rashell
@@ -21,25 +21,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-PACKAGE=		rashell
-VERSION=		0.1.0
-OFFICER=		michipili@gmail.com
+PROGRAM=		example
 
-MODULE=			ocaml.lib:src
-MODULE+=		ocaml.prog:example
-MODULE+=		ocaml.meta:meta
-MODULE+=		ocaml.manual:manual
+install:
+	${NOP}
 
-SUBDIR=			testsuite
-
-EXTERNAL=		ocaml.findlib:broken
-EXTERNAL+=		ocaml.findlib:lwt.unix
-EXTERNAL+=		ocaml.findlib:lwt.ppx
-EXTERNAL+=		ocaml.findlib:str
-
-CONFIGURE+=		Makefile.config.in
-CONFIGURE+=		src/rashell_Configuration.ml.in
-
-.include "generic.project.mk"
+.include "ocaml.prog.mk"
 
 ### End of file `Makefile'
