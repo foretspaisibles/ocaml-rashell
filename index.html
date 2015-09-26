@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Rashell by michipili</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Rashell</h1>
+        <p>Resilient replicant Shell Programming Library</p>
+
+        <p class="view"><a href="https://github.com/michipili/rashell">View the Project on GitHub <small>michipili/rashell</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/michipili/rashell/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/michipili/rashell/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/michipili/rashell">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="rashell-the-resilient-and-replicant-shell-programming-library" class="anchor" href="#rashell-the-resilient-and-replicant-shell-programming-library" aria-hidden="true"><span class="octicon octicon-link"></span></a>Rashell, the resilient and replicant shell programming library</h1>
+
+<p>As discussed by Lowell Jay Arthur in <em>Unix shell programming</em>
+(2nd ed.), the Unix shell is a brillant tool for quickly
+designing prototypes.  Unluckily, error management is very
+difficult in the shell.  Most interfaces to the Unix shell found in
+programming languages share this fragile optimism, which makes
+impossible to write maintainable and resilient programs.</p>
+
+<p><strong>Rashell</strong> defines primitives which combine ease of use with the
+ability to write maintainable and resilient programs leveraging the
+full power of Unix.  These primitives implements common patterns to
+interact with Unix utilities as subprocesses. These patterns either
+yield a string or a stream of lines, which will also adequately report
+error conditions on subprocesses.</p>
+
+<p><strong>Rashell</strong> is based on the excellent <a href="http://ocsigen.org/lwt/">Lwt</a> library and its
+<a href="http://ocsigen.org/lwt/2.5.0/api/Lwt_process">Lwt_process</a> module.</p>
+
+<p><a href="https://travis-ci.org/michipili/rashell?branch=master"><img src="https://travis-ci.org/michipili/rashell.svg?branch=master" alt="Build Status"></a></p>
+
+<h2>
+<a id="rashell-commands" class="anchor" href="#rashell-commands" aria-hidden="true"><span class="octicon octicon-link"></span></a>Rashell commands</h2>
+
+<p>The module <em>Rashell_Command</em> defines the description of commands and
+common patterns to run computation consuming a subprocess executing a
+command.</p>
+
+<div class="highlight highlight-source-ocaml"><pre><span class="pl-c">(** The type of command descriptions.</span>
+<span class="pl-c"></span>
+<span class="pl-c">    As for [Lwt_process.exec], if the [program] name is the empty string,</span>
+<span class="pl-c">    then the first argument will be used. You should specify a name only</span>
+<span class="pl-c">    if you do not want the executable to be searched in the PATH. On</span>
+<span class="pl-c">    Windows the only way to enable automatic seach in PATH is to pass an</span>
+<span class="pl-c">    empty name.</span>
+<span class="pl-c"></span>
+<span class="pl-c">    If [env] supplied, this is the environment of the child</span>
+<span class="pl-c">    process, otherwise the environment is inherited.</span>
+<span class="pl-c"></span>
+<span class="pl-c">    If [workdir] supplied, the child process will be started in</span>
+<span class="pl-c">    [workdir] instead of the current working directory. *)</span>
+<span class="pl-k">type</span> <span class="pl-k">t </span>= {
+  <span class="pl-s1">program</span>: <span class="pl-k">string</span><span class="pl-k">;</span>
+  <span class="pl-s1">argv</span>: <span class="pl-k">string</span> <span class="pl-k">array</span><span class="pl-k">;</span>
+  <span class="pl-s1">env</span>: <span class="pl-k">string</span> <span class="pl-k">array</span> <span class="pl-k">option</span><span class="pl-k">;</span>
+  <span class="pl-s1">workdir</span>: <span class="pl-k">string</span> <span class="pl-k">option</span><span class="pl-k">;</span>
+}
+
+<span class="pl-c">(** The type of process status. *)</span>
+<span class="pl-k">type</span> <span class="pl-k">process_status </span>= <span class="pl-c1">Unix</span><span class="pl-k">.process_status</span>  <span class="pl-k">=</span>
+  | <span class="pl-en">WEXITED</span> <span class="pl-k">of</span> <span class="pl-k">int</span>
+  | <span class="pl-en">WSIGNALED</span> <span class="pl-k">of</span> <span class="pl-k">int</span>
+  | <span class="pl-en">WSTOPPED</span> <span class="pl-k">of</span> <span class="pl-k">int</span>
+
+<span class="pl-k">exception</span> <span class="pl-en">Error</span> of t <span class="pl-k">*</span> process_status <span class="pl-k">*</span> <span class="pl-k">string</span>
+<span class="pl-c">(** The exception thrown by failed subprocesses.  When the subprocess</span>
+<span class="pl-c">consumed by a computation fails, then the thread yielding the result</span>
+<span class="pl-c">of the computation or the thread reading from the stream yielding</span>
+<span class="pl-c">results of the computation will fail with the given exception.</span>
+<span class="pl-c"></span>
+<span class="pl-c">The string parameter of the exception is the aggregated standard error</span>
+<span class="pl-c">output of the failed process. *)</span></pre></div>
+
+<p>The module implements four computations consuming a subprocess, which
+are classfied as utility, test, query and filter.</p>
+
+<p>A <em>utility</em> is a program which is called to perform a computation
+which results are stored on the filesystem (like <em>make</em>, a compiler or
+inplace edition with <em>sed</em>) or sent on <em>stdout</em>, like <em>uname</em>,
+<em>uptime</em> or <em>hostname</em>.</p>
+
+<div class="highlight highlight-source-ocaml"><pre><span class="pl-c">(** Execute the given command and return its exit status, the content</span>
+<span class="pl-c">    of stdout and of stderr. *)</span>
+<span class="pl-k">val</span> <span class="pl-en">exec_utility</span> : <span class="pl-k">t</span> -&gt; <span class="pl-k">string</span> <span class="pl-c1">Lwt</span><span class="pl-k">.t</span></pre></div>
+
+<p>A <em>test</em> is a program used as a predicate, whose exit status is
+examined: if it is 0, then the predicate is satisfied, if it is 1 then
+the predicate is not satisfied. Other values are interpreted as a
+failure of the program.</p>
+
+<div class="highlight highlight-source-ocaml"><pre><span class="pl-c">(** Execute the given command and test its exit status. An exit status</span>
+<span class="pl-c">    of [0] indicates success of the test, [1] indicates failure of the</span>
+<span class="pl-c">    test and other values indicate a general error. *)</span>
+<span class="pl-k">val</span> <span class="pl-en">exec_test</span> : <span class="pl-k">t</span> -&gt; <span class="pl-k">bool</span> <span class="pl-c1">Lwt</span><span class="pl-k">.t</span></pre></div>
+
+<p>A <em>query</em> is a program retrieving information structured in records,
+one on each line.  Such programs are <em>join</em>, <em>paste</em>, <em>find</em>, <em>ps</em>,
+<em>sed</em> and <em>awk</em> for instance.</p>
+
+<div class="highlight highlight-source-ocaml"><pre><span class="pl-c">(** Execute the given command and return a stream reading the output</span>
+<span class="pl-c">    of the command and its exit status with error output. *)</span>
+<span class="pl-k">val</span> <span class="pl-en">exec_query</span> : <span class="pl-k">t</span> -&gt; <span class="pl-k">string</span> <span class="pl-c1">Lwt_stream</span><span class="pl-k">.t</span></pre></div>
+
+<p>A <em>filter</em> is a program used to transform a stream of lines in a
+stream of lines.  Program commonly used as filters are <em>tr</em>, <em>sed</em>,
+<em>awk</em>.</p>
+
+<div class="highlight highlight-source-ocaml"><pre><span class="pl-c">(** Execute the given command and return a function mapping streams,</span>
+<span class="pl-c">    and its exit status with error output. *)</span>
+<span class="pl-k">val</span> <span class="pl-en">exec_filter</span> : <span class="pl-k">t</span> -&gt; <span class="pl-k">string</span> <span class="pl-c1">Lwt_stream</span><span class="pl-k">.t</span> -&gt; <span class="pl-k">string</span> <span class="pl-c1">Lwt_stream</span><span class="pl-k">.t</span></pre></div>
+
+<h2>
+<a id="other-modules" class="anchor" href="#other-modules" aria-hidden="true"><span class="octicon octicon-link"></span></a>Other modules</h2>
+
+<p>Other modules builds atop <em>Rashell_Command</em> to implement a convenient
+interface to various systems.  At that time, only a few POSIX utilies
+have been wrapped, but the number of available modules should
+increase rapidly.</p>
+
+<h2>
+<a id="free-software" class="anchor" href="#free-software" aria-hidden="true"><span class="octicon octicon-link"></span></a>Free software</h2>
+
+<p>Rashell is free software: copying it and redistributing it is
+very much welcome under conditions of the <a href="http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html">CeCILL-B</a>
+licence agreement, found in the <a href="COPYING">COPYING</a> and
+<a href="COPYING-FR">COPYING-FR</a> files of the distribution.</p>
+
+<h2>
+<a id="setup-guide" class="anchor" href="#setup-guide" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setup guide</h2>
+
+<p>It is easy to install <strong>Rashell</strong> using <strong>opam</strong> and its <em>pinning</em>
+feature.  In a shell visiting the repository, say</p>
+
+<div class="highlight highlight-text-shell-session"><pre>% <span class="pl-s1">opam pin add rashell <span class="pl-c1">.</span></span></pre></div>
+
+<p>It is also possible to install <strong>Rashell</strong> manually.
+The installation procedure is based on the portable build system
+<a href="https://github.com/michipili/bsdowl">BSD Owl Scripts</a> written for BSD Make.</p>
+
+<ol>
+<li>
+<p>Verify that prerequisites are installed:</p>
+
+<ul>
+<li>BSD Make</li>
+<li><a href="https://github.com/michipili/bsdowl/wiki/Install">BSD OWl</a></li>
+<li>OCaml</li>
+<li>GNU Autoconf</li>
+</ul>
+</li>
+<li><p>Get the source, either by cloning the repository or by exploding a
+<a href="releases">distribution tarball</a>.</p></li>
+<li><p>Optionally run <code>autoconf</code> to produce a configuration script. This
+is only required if the script is not already present.</p></li>
+<li><p>Run <code>./configure</code>, you can choose the installation prefix with
+<code>--prefix</code>.</p></li>
+<li><p>Run <code>make build</code>.</p></li>
+<li><p>Optionally run <code>make test</code> to test your build.</p></li>
+<li><p>Finally run <code>make install</code>.</p></li>
+</ol>
+
+<p>Depending on how <strong>BSD Make</strong> is called on your system, you may need to
+replace <code>make</code> by <code>bsdmake</code> or <code>bmake</code> in steps 5, 6, and 7.
+The <strong>GNU Make</strong> program usually give up the ghost, croaking
+<code>*** missing separator. Stop.</code> when you mistakingly use it instead of
+<strong>BSD Make</strong>.</p>
+
+<p>Step 7 requires that you can <code>su -</code> if you are not already <code>root</code>.</p>
+
+<p>Michael Grünewald in Bonn, on September 5, 2015</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/michipili">michipili</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
