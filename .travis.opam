@@ -2,7 +2,7 @@ compiler:
   - 4.01.0
   - 4.02.3
 repository:
+  - atdgen
+  - broken
   - ocamlfind
   - lwt
-git:
-  - https://github.com/michipili/broken.git
