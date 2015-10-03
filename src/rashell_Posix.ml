@@ -288,7 +288,22 @@ type free_disk_space = {
 }
 
 let df_of_string s =
-  Scanf.sscanf s "%s %d %d %d %f%% %s"
+  let open Scanf in
+  let cond_scanf scanners fallback channel =
+    let rec loop = function
+      | [] -> fallback channel
+      | hd :: tl ->
+        try hd channel
+        with Scanf.Scan_failure(_) -> loop tl
+    in
+    loop scanners
+  in
+  let scan_device =
+      cond_scanf
+      [ fun sc -> bscanf sc "map %s" (fun s -> "map "^s) ]
+      (fun sc -> bscanf sc "%s" (fun s -> s))
+  in
+  sscanf s "%r %d %d %d %f%% %s" scan_device
     (fun df_device df_blocks df_used df_free df_capacity df_mounted_on -> {
          df_device;
          df_blocks;

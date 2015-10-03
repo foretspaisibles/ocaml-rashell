@@ -94,4 +94,5 @@ let () =
       "You say goodbye, and I say hello!";
     ]
   |* find_suite
+  |& assert_process_status "df" (fun () -> df []) (Rashell_Command.WEXITED 0)
   |> register
