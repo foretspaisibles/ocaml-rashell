@@ -276,3 +276,9 @@ let awk_filter ?workdir ?env ?fs ?bindings script =
   exec_filter
     (command ?workdir ?env
        (ac_path_awk, _awk_argv ?fs ?bindings script []))
+
+let du paths =
+  exec_query (command ("", Array.append [| ac_path_du; "-k" |]
+                         (Array.of_list paths)))
+  |> Lwt_stream.to_list
+  >|= List.map (fun s -> Scanf.sscanf s "%d %s" (fun n p -> (p, n)))

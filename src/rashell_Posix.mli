@@ -157,3 +157,7 @@ val awk_filter :
   ?bindings:(string * string) list ->
   string -> string Lwt_stream.t -> string Lwt_stream.t
 (** [awk script files] wrapper of the {i awk(1)} command. *)
+
+val du : string list -> (string * int) list Lwt.t
+(** [du paths] query the consumed disk space for the file hierarchies
+    rooted at the given paths. Output in kilobytes. *)
