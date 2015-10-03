@@ -157,3 +157,23 @@ val awk_filter :
   ?bindings:(string * string) list ->
   string -> string Lwt_stream.t -> string Lwt_stream.t
 (** [awk script files] wrapper of the {i awk(1)} command. *)
+
+
+(** {6 Free disk space} *)
+
+(** The result of a free disk space query. *)
+type free_disk_space = {
+  df_device: string;
+  df_blocks: int;
+  df_used: int;
+  df_free: int;
+  df_capacity: float;
+  df_mounted_on: string;
+}
+
+val df : string list -> free_disk_space list Lwt.t
+(** [df paths] return the available free disk space on the devices for
+    the given paths, or for all devices if the empty list is given.  The
+    free disk space is computed with ["df -k -P"] as described in
+    {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/df.html}
+    df(1)}. *)

@@ -276,3 +276,52 @@ let awk_filter ?workdir ?env ?fs ?bindings script =
   exec_filter
     (command ?workdir ?env
        (ac_path_awk, _awk_argv ?fs ?bindings script []))
+
+
+type free_disk_space = {
+  df_device: string;
+  df_blocks: int;
+  df_used: int;
+  df_free: int;
+  df_capacity: float;
+  df_mounted_on: string;
+}
+
+let df_of_string s =
+  let open Scanf in
+  let cond_scanf scanners fallback channel =
+    let rec loop = function
+      | [] -> fallback channel
+      | hd :: tl ->
+        try hd channel
+        with Scanf.Scan_failure(_) -> loop tl
+    in
+    loop scanners
+  in
+  let scan_device =
+      cond_scanf
+      [ fun sc -> bscanf sc "map %s" (fun s -> "map "^s) ]
+      (fun sc -> bscanf sc "%s" (fun s -> s))
+  in
+  sscanf s "%r %d %d %d %f%% %s" scan_device
+    (fun df_device df_blocks df_used df_free df_capacity df_mounted_on -> {
+         df_device;
+         df_blocks;
+         df_used;
+         df_free;
+         df_capacity = df_capacity /. 100.0;
+         df_mounted_on;
+       })
+
+let df paths =
+  let s =
+    exec_query (command ~env:[| "LANG=C" |]
+                  ("", Array.append
+                     [| ac_path_df; "-k"; "-P" |]
+                     (Array.of_list paths)))
+  in
+  Lwt_stream.junk s
+  >>= fun () ->
+  Lwt_stream.to_list s
+  >>= fun lst ->
+  Lwt.return(List.map df_of_string lst)

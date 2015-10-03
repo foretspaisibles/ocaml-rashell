@@ -17,6 +17,9 @@ let ac_path_awk =
 let ac_path_cp =
   "@CP@"
 
+let ac_path_df =
+  "@DF@"
+
 let ac_path_docker =
   "@DOCKER@"
 
