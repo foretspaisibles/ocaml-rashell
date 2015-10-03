@@ -325,3 +325,9 @@ let df paths =
   Lwt_stream.to_list s
   >>= fun lst ->
   Lwt.return(List.map df_of_string lst)
+
+let du paths =
+  exec_query (command ("", Array.append [| ac_path_du; "-k" |]
+                         (Array.of_list paths)))
+  |> Lwt_stream.to_list
+  >|= List.map (fun s -> Scanf.sscanf s "%d %s" (fun n p -> (p, n)))

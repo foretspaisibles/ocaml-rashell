@@ -95,4 +95,5 @@ let () =
     ]
   |* find_suite
   |& assert_process_status "df" (fun () -> df []) (Rashell_Command.WEXITED 0)
+  |& assert_process_status "du" (fun () -> du []) (Rashell_Command.WEXITED 0)
   |> register

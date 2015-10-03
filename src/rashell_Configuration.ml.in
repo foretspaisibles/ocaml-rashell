@@ -20,6 +20,9 @@ let ac_path_cp =
 let ac_path_df =
   "@DF@"
 
+let ac_path_du =
+  "@DU@"
+
 let ac_path_docker =
   "@DOCKER@"
 

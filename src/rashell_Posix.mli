@@ -177,3 +177,7 @@ val df : string list -> free_disk_space list Lwt.t
     free disk space is computed with ["df -k -P"] as described in
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/df.html}
     df(1)}. *)
+
+val du : string list -> (string * int) list Lwt.t
+(** [du paths] query the consumed disk space for the file hierarchies
+    rooted at the given paths. Output in kilobytes. *)
