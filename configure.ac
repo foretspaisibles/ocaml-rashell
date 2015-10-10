@@ -45,18 +45,23 @@ AC_ARG_WITH([docker],
   [WITH_DOCKER=${with_docker}
     case $with_docker in
     no)
+      WITH_DOCKER='no'
       DOCKER='/nonexistant'
       ;;
     yes)
       AC_PATH_PROG_REQUIRE([DOCKER], [docker])
+      WITH_DOCKER='yes'
       AC_NEED_FINDLIB_PKG([atdgen])
       ;;
     *)
       DOCKER="${with_docker}"
+      WITH_DOCKER='yes'
       AC_NEED_FINDLIB_PKG([atdgen])
       ;;
     esac;],
-  [WITH_DOCKER='no'; DOCKER='/nonexistant';])
+  [AC_PATH_PROG([DOCKER], [docker], [/nonexistant])
+   AS_IF([test "${DOCKER}" = '/nonexistant'], [WITH_DOCKER='no'], [WITH_DOCKER='yes'])])
+AC_SUBST([WITH_DOCKER])
 
 AC_CONFIG_FILES([Makefile.config src/rashell_Configuration.ml])
 AC_OUTPUT
