@@ -26,7 +26,7 @@ type config = {
   attach_stdout			<json name="AttachStdout">:	bool;
   attach_stdin			<json name="AttachStdin">:	bool;
   ?cmd				<json name="Cmd">:		string list nullable;
-  cpu_shares			<json name="CpuShares">:	int;
+  ?cpu_shares			<json name="CpuShares">:	int nullable;
   domainname			<json name="Domainname">:	string;
   ?entrypoint			<json name="EntryPoint">:	string list <ocaml repr="array"> nullable;
   ?env				<json name="Env">:		string list <ocaml repr="array"> nullable;
