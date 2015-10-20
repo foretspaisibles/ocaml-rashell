@@ -166,7 +166,7 @@ let rm lst =
   _exec [| "rm" |] lst
 
 let rmi lst =
-  _exec [| "lst" |] lst
+  _exec [| "rmi" |] lst
 
 let restart lst =
   _exec [| "restart" |] lst
