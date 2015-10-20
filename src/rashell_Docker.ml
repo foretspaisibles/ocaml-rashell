@@ -131,10 +131,13 @@ let _inspect of_json lst =
       Printf.ksprintf Lwt.fail_with "%s._inspect: %S: %s"
         __MODULE__ s mesg
   in
-  (exec_utility (command ("", (Array.append
-                                 [| ac_path_docker; "inspect";|]
-                                 (Array.of_list lst)))))
-  >>= convert
+  if lst = [] then
+    Lwt.return []
+  else
+    (exec_utility (command ("", (Array.append
+                                   [| ac_path_docker; "inspect";|]
+                                   (Array.of_list lst)))))
+    >>= convert
 
 let _list resource of_json () =
   Lwt_stream.to_list
@@ -152,12 +155,15 @@ let images =
   _list "images" images_of_string
 
 let _exec argv lst =
-  (exec_utility (command ("", Array.concat [
-       [| ac_path_docker; |];
-       argv;
-       Array.of_list lst;
-     ])))
-  |> Lwt.map ignore
+  if lst = [] then
+    Lwt.return_unit
+  else
+    (exec_utility (command ("", Array.concat [
+         [| ac_path_docker; |];
+         argv;
+         Array.of_list lst;
+       ])))
+    |> Lwt.map ignore
 
 let stop lst =
   _exec [| "stop" |] lst
