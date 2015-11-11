@@ -14,6 +14,9 @@
 type t = float
 (** The type of timestamps. *)
 
+val now : unit -> t
+(** A timestamp marking current time. *)
+
 val to_unix : t -> Unix.tm
 (** Convert timestamps to Unix time, assumes UTC. *)
 

@@ -26,7 +26,7 @@ type config = {
   attach_stdout			<json name="AttachStdout">:	bool;
   attach_stdin			<json name="AttachStdin">:	bool;
   ?cmd				<json name="Cmd">:		string list nullable;
-  cpu_shares			<json name="CpuShares">:	int;
+  ?cpu_shares			<json name="CpuShares">:	int nullable;
   domainname			<json name="Domainname">:	string;
   ?entrypoint			<json name="EntryPoint">:	string list <ocaml repr="array"> nullable;
   ?env				<json name="Env">:		string list <ocaml repr="array"> nullable;
@@ -40,7 +40,7 @@ type image = {
   id				<json name="Id">:		string;
   comment			<json name="Comment">:		string;
   created			<json name="Created">:		string;
-  ?parent			<json name="String">:		string nullable;
+  ?parent			<json name="Parent">:		string nullable;
   virtual_size			<json name="VirtualSize">:	int;
   size				<json name="Size">:		int;
   docker_version		<json name="DockerVersion">:	string;
@@ -67,8 +67,8 @@ type container = {
   args				<json name="Args">:		string list;
   path				<json name="Path">:		string;
   restart_count			<json name="RestartCount">:	int;
-  volumes			<json name="Volumes">:		(string * string) list <json repr="object">;
-  volumes_rw			<json name="VolumesRW">:	(string * bool) list <json repr="object">;
+  ?volumes			<json name="Volumes">:		(string * string) list <json repr="object"> nullable;
+  ?volumes_rw			<json name="VolumesRW">:	(string * bool) list <json repr="object"> nullable;
   state				<json name="State">:		state;
 } <ocaml field_prefix="container_">
 

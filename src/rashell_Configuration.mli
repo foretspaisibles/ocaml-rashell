@@ -17,6 +17,12 @@ val ac_path_awk : string
 val ac_path_cp : string
 (** The compile-time path to the cp program. *)
 
+val ac_path_df : string
+(** The compile-time path to the df program. *)
+
+val ac_path_du : string
+(** The compile-time path to the du program. *)
+
 val ac_path_docker : string
 (** The compile-time path to the docker program. *)
 

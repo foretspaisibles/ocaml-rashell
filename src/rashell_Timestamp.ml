@@ -16,10 +16,21 @@ open Scanf
 
 type t = float
 
+let unix_epoch =
+  Unix.{
+    tm_sec = 0;
+    tm_min = 0;
+    tm_hour = 0;
+    tm_mday = 1;
+    tm_mon = 0;
+    tm_year = 70;
+    tm_wday = 4;
+    tm_yday = 0;
+    tm_isdst = false;
+  }
+
 let offset =
-  let t0 = gettimeofday () in
-  let t1 = fst(mktime(gmtime t0)) in
-  t0 -. t1
+  ~-. (fst(mktime unix_epoch))
 
 let now () =
   gettimeofday()
@@ -37,7 +48,7 @@ let of_string s =
       tm_min = minute;
       tm_hour = hour;
       tm_mday = day;
-      tm_mon = month;
+      tm_mon = month - 1;
       tm_year = year - 1900;
       tm_wday = 0;
       tm_yday = 0;
@@ -53,7 +64,7 @@ let to_string timestamp =
   let open Unix in
   let tm = gmtime timestamp in
   let sec =
-    timestamp -. of_unix { (localtime timestamp) with tm_sec = 0 }
+    timestamp -. of_unix { tm with tm_sec = 0 }
   in
   sprintf "%04d-%02d-%02dT%02d:%02d:%06.3fZ"
     (1900 + tm.tm_year)

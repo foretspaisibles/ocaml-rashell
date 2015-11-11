@@ -12,7 +12,7 @@
 # http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt
 
 PACKAGE=		rashell
-VERSION=		0.2.0
+VERSION=		0.2.1
 OFFICER=		michipili@gmail.com
 
 MODULE=			ocaml.lib:src
@@ -25,6 +25,7 @@ SUBDIR=			testsuite
 EXTERNAL=		ocaml.findlib:broken
 EXTERNAL+=		ocaml.findlib:lwt.unix
 EXTERNAL+=		ocaml.findlib:lwt.ppx
+EXTERNAL+=		ocaml.findlib:mixture
 EXTERNAL+=		ocaml.findlib:str
 EXTERNAL+=		ocaml.findlib:atdgen
 
