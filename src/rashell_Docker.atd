@@ -67,8 +67,8 @@ type container = {
   args				<json name="Args">:		string list;
   path				<json name="Path">:		string;
   restart_count			<json name="RestartCount">:	int;
-  ?volumes			<json name="Volumes">:		(string * string) list nullable <json repr="object">;
-  ?volumes_rw			<json name="VolumesRW">:	(string * bool) list nullable <json repr="object">;
+  ?volumes			<json name="Volumes">:		(string * string) list <json repr="object"> nullable;
+  ?volumes_rw			<json name="VolumesRW">:	(string * bool) list <json repr="object"> nullable;
   state				<json name="State">:		state;
 } <ocaml field_prefix="container_">
 
