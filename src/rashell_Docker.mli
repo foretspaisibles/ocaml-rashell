@@ -13,6 +13,9 @@
 
 open Rashell_Docker_t
 
+type image_id      = string
+type container_id = string
+
 type restart_policy =
   | Restart_No
   | Restart_Always
@@ -24,38 +27,38 @@ val ps : unit -> container list Lwt.t
 val images : unit -> image list Lwt.t
 (** List images. *)
 
-val tags : unit -> (string * (string * string) list) list Lwt.t
+val tags : unit -> (image_id * (string * string) list) list Lwt.t
 (** Examine tags in the local repository.  The result is an
     association list mapping image ids to the (multiple)
     [(repository, tag)] pointing to them. *)
 
-val stop : string list -> unit Lwt.t
+val stop : container_id list -> unit Lwt.t
 (** Stop a container, given its id. *)
 
-val rm : string list -> unit Lwt.t
+val rm : container_id list -> unit Lwt.t
 (** Remove a container, given its id. *)
 
-val rmi : string list -> unit Lwt.t
+val rmi : image_id list -> unit Lwt.t
 (** Remove an image, given its id. *)
 
-val restart : string list -> unit Lwt.t
+val restart : container_id list -> unit Lwt.t
 (** Restart a container, given its id. *)
 
-val run : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> string -> string Lwt.t
+val run : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> image_id -> container_id Lwt.t
 (** Start a container in detached mode, the returned string is the
     container id. *)
 
-val run_utility : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> string -> string Lwt.t
+val run_utility : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> image_id -> string Lwt.t
 (*** Start a container in attached mode, and return the standard
      output of the program. *)
 
-val run_query : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> string -> string Lwt_stream.t
+val run_query : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> image_id -> string Lwt_stream.t
 (*** Start a container in attached mode, and return the lines
      written on standard output by the program. *)
 
-val run_test : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> string -> bool Lwt.t
+val run_test : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> image_id -> bool Lwt.t
 (*** Start a container in attached mode, and interpret its return
      status as a predicate. *)
 
-val run_shell : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> string -> unit Lwt.t
+val run_shell : ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?argv:string array -> image_id -> unit Lwt.t
 (*** Start a custom shell in a container. *)

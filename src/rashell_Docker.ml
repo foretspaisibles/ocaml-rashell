@@ -19,6 +19,8 @@ open Lwt.Infix
 
 module Pool = Set.Make(String)
 
+type image_id     = string
+type container_id = string
 
 let ps_keyword = [
   "CONTAINER ID";
