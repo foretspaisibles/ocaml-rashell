@@ -159,7 +159,7 @@ let pp_print_command fft cmd =
 let pp_print_error fft = function
   | Error(command, process_status, stderr) ->
       Some(Format.fprintf fft "%s.Error(%a, %a, %S)"
-             __MODULE__
+             "Rashell_Command"
              pp_print_command command
              pp_print_process_status process_status
              stderr)
@@ -189,7 +189,7 @@ let outcome is_test cmd p =
     (fun stderr status ->
        if is_debugged (command_name cmd) then
          Format.eprintf "@[<2>%s: outcome:@ %a@ %a@ %s@]@\n%!"
-           __MODULE__
+           "Rashell_Command"
            pp_print_command cmd
            pp_print_process_status status
            stderr;
@@ -211,7 +211,7 @@ let open_process cmd =
   in
   if is_debugged (command_name cmd) then
     Format.eprintf "@[<2>%s: open_process:@ %a@]@\n%!"
-      __MODULE__ pp_print_command cmd;
+      "Rashell_Command" pp_print_command cmd;
   match cmd.workdir with
   | None -> open_process_in_cwd cmd
   | Some(otherdir) -> with_workdir otherdir open_process_in_cwd cmd
@@ -244,30 +244,29 @@ let exec_test_unsafe cmd =
    match status with
    | WEXITED(0) -> Lwt.return_true
    | WEXITED(1) -> Lwt.return_false
-   | _ -> Printf.ksprintf Lwt.fail_with "%s.exec_test_unsafe" __MODULE__)
+   | _ -> Printf.ksprintf Lwt.fail_with "%s.exec_test_unsafe" "Rashell_Command")
 
 let exec_test cmd =
   supervise exec_test_unsafe cmd
 
 let exec_query cmd =
-  match open_process cmd with
-  | p ->  monitor (outcome false cmd p) (recv_lines p p#stdout)
-  | exception Sys_error(mesg) ->
-      Lwt_stream.from (fun () -> Lwt.fail(Error(cmd, WEXITED(127), mesg)))
+
+  try let p = open_process cmd in
+    monitor (outcome false cmd p) (recv_lines p p#stdout)
+  with Sys_error(mesg) ->
+    Lwt_stream.from (fun () -> Lwt.fail(Error(cmd, WEXITED(127), mesg)))
 
 let exec_filter cmd lines =
-  match open_process cmd with
-  | p ->
-      let sender =
-        let p1 = send_lines p lines
-        and p2 = outcome false cmd p
-        in
-        lwt_bind2 p1 p2 (fun () () -> Lwt.return_unit)
+  try let p = open_process cmd in
+    let sender =
+      let p1 = send_lines p lines
+      and p2 = outcome false cmd p
       in
-      monitor sender (recv_lines p p#stdout)
-
-  | exception Sys_error(mesg) ->
-      Lwt_stream.from (fun () -> Lwt.fail(Error(cmd, WEXITED(127), mesg)))
+      lwt_bind2 p1 p2 (fun () () -> Lwt.return_unit)
+    in
+    monitor sender (recv_lines p p#stdout)
+  with Sys_error(mesg) ->
+    Lwt_stream.from (fun () -> Lwt.fail(Error(cmd, WEXITED(127), mesg)))
 
 let exec_shell_unsafe cmd =
   let p =
@@ -282,7 +281,7 @@ let exec_shell_unsafe cmd =
   >>= fun status ->
   match status with
   | WEXITED(0) -> Lwt.return_unit
-  | _ -> Printf.ksprintf Lwt.fail_with "%s.exec_shell_unsafe" __MODULE__
+  | _ -> Printf.ksprintf Lwt.fail_with "%s.exec_shell_unsafe" "Rashell_Command"
 
 let exec_shell cmd =
   supervise exec_shell_unsafe cmd

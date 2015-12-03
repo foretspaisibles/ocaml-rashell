@@ -73,9 +73,10 @@ let assert_measure_interval (a, b, expected) =
 
 
 let test_to_string () =
+  let open Unix in
   List.map assert_to_string [
     Epoch(0.0), "1970-01-01T00:00:00.000Z";
-    Unix(Unix.{
+    Unix({
         tm_sec = 0;
         tm_min = 0;
         tm_hour = 0;
@@ -86,7 +87,7 @@ let test_to_string () =
         tm_yday = 0;
         tm_isdst = false;
       }), "1970-01-01T00:00:00.000Z";
-    Unix(Unix.{
+    Unix({
         tm_sec = 10;
         tm_min = 0;
         tm_hour = 0;
@@ -102,10 +103,11 @@ let test_to_string () =
   ]
 
 let test_measure_interval () =
+  let open Unix in
   let seconds_per_hour = 3600.0 in
   let seconds_per_day = 24.0 *. seconds_per_hour in
   List.map assert_measure_interval [
-    Unix(Unix.{
+    Unix({
         tm_sec = 10;
         tm_min = 0;
         tm_hour = 0;
@@ -116,7 +118,7 @@ let test_measure_interval () =
         tm_yday = 0;
         tm_isdst = false;
       }),
-    Unix(Unix.{
+    Unix({
         tm_sec = 10;
         tm_min = 0;
         tm_hour = 0;

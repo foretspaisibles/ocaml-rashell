@@ -16,18 +16,17 @@ open Scanf
 
 type t = float
 
-let unix_epoch =
-  Unix.{
-    tm_sec = 0;
-    tm_min = 0;
-    tm_hour = 0;
-    tm_mday = 1;
-    tm_mon = 0;
-    tm_year = 70;
-    tm_wday = 4;
-    tm_yday = 0;
-    tm_isdst = false;
-  }
+let unix_epoch = {
+  tm_sec = 0;
+  tm_min = 0;
+  tm_hour = 0;
+  tm_mday = 1;
+  tm_mon = 0;
+  tm_year = 70;
+  tm_wday = 4;
+  tm_yday = 0;
+  tm_isdst = false;
+}
 
 let offset =
   ~-. (fst(mktime unix_epoch))
@@ -58,7 +57,7 @@ let of_string s =
   in
   try sscanf s "%d-%d-%dT%d:%d:%fZ" convert
   with Scan_failure(mesg) ->
-    ksprintf failwith "%s.of_string: %s" __MODULE__ mesg
+    ksprintf failwith "%s.of_string: %s" "Rashell_Timestamp" mesg
 
 let to_string timestamp =
   let open Unix in
