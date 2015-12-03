@@ -20,15 +20,17 @@ open Lwt.Infix
 let test_tmpfile () =
   let open Lwt_io in
   let validate_perm file =
-    if%lwt (Rashell_Posix.(test (Not(Or[
-        (* The bitmask must be at most 0o700 *)
-        Has_at_least_permission(0o010);
-        Has_at_least_permission(0o020);
-        Has_at_least_permission(0o040);
-        Has_at_least_permission(0o001);
-        Has_at_least_permission(0o002);
-        Has_at_least_permission(0o004);
-      ]))file))
+    (Rashell_Posix.(test (Not(Or[
+         (* The bitmask must be at most 0o700 *)
+         Has_at_least_permission(0o010);
+         Has_at_least_permission(0o020);
+         Has_at_least_permission(0o040);
+         Has_at_least_permission(0o001);
+         Has_at_least_permission(0o002);
+         Has_at_least_permission(0o004);
+       ]))file))
+    >>= fun test_successful ->
+    if test_successful
     then
       Lwt.return file
     else
@@ -36,12 +38,10 @@ let test_tmpfile () =
         file (Unix.stat file).Unix.st_perm
   in
   let write_read file =
-    let%lwt () =
-      with_file ~mode:Output file (fun chan -> fprintl chan "cookie")
-    in
-    let%lwt got =
-      with_file ~mode:Input file read_line
-    in
+    with_file ~mode:Output file (fun chan -> fprintl chan "cookie")
+    >>= fun () ->
+    with_file ~mode:Input file read_line
+    >>= fun got ->
     if got = "cookie" then
       Lwt.return file
     else
@@ -69,9 +69,8 @@ let test_tmpdir () =
   ]
   in
   let populate base =
-    let%lwt () =
-      Toolbox.populate (spec base)
-    in
+    Toolbox.populate (spec base)
+    >>= fun () ->
     Lwt.return(base)
   in
   let validate base =
@@ -81,16 +80,17 @@ let test_tmpdir () =
           Has_exact_permission perm
         ]) (List.fold_left Filename.concat "" path))
     in
-    let%lwt success =
-      Lwt_list.for_all_p test (spec base)
-    in
+    Lwt_list.for_all_p test (spec base)
+    >>= fun success ->
     if success then
       Lwt.return base
     else
       Lwt.fail_with "Could not validate"
   in
   let dir_has_been_removed base =
-    if%lwt Rashell_Posix.(test (Has_kind S_DIR)) base then
+    Rashell_Posix.(test (Has_kind S_DIR)) base
+    >>= fun directory_still_exists ->
+    if directory_still_exists then
       ksprintf Lwt.fail_with "%S: Directory still exists." base
     else
       Lwt.return_true
