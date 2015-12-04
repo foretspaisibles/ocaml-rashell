@@ -22,6 +22,17 @@ module Pool = Set.Make(String)
 type image_id     = string
 type container_id = string
 
+type volume_source =
+    [ `Auto
+    | `Named of string
+    | `Path of string
+    ]
+
+type volume_option =
+    [ `RO | `Relabel | `Relabel_private ]
+
+type volume_mountpoint = string
+
 let ps_keyword = [
   "CONTAINER ID";
   "IMAGE";
@@ -193,7 +204,12 @@ let maybe_list f =
 let maybe_concat lst =
   Array.concat(List.map maybe_get lst)
 
-let _run exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?publish ?tty ?user ?uid ?privileged ?restart ?argv image =
+let string_of_volume_option = function
+  | `RO -> ":ro"
+  | `Relabel -> ":z"
+  | `Relabel_private -> ":Z"
+
+let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
   let open Printf in
   let dockerargv =
     maybe_concat [
@@ -232,24 +248,67 @@ let _run exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entr
            | Restart_On_failure(0) -> [| "--restart=on-failure" |]
            | Restart_On_failure(n) -> [| sprintf "--restart=on-failure:%d" n |])
          restart);
+      (maybe_list
+         (fun (src, dst, options) ->
+
+            (* TODO: should we check that
+             *   (a) the volume name is correct (alphanumeric
+             *       character, followed by [a-z0-9_.-]+)
+             *   (b) the source path exists
+             *
+             * or let docker run fail?
+             **)
+            if Filename.is_relative dst then
+              invalid_arg
+                (sprintf
+                   "Rashell_Docker.%s: volume destination is not absolute"
+                   funcname);
+
+            let vol = match src with
+              | `Auto -> dst
+              | `Named volname -> sprintf "%s:%s" volname dst
+              | `Path src ->
+                  if Filename.is_relative src then
+                    invalid_arg
+                      (sprintf
+                         "Rashell_Docker.%s: volume source is not absolute"
+                         funcname);
+                  Printf.sprintf "%s:%s" src dst in
+
+            let suffix = String.concat ""
+                           (List.map string_of_volume_option options)
+            in
+              [| sprintf "--volume=%s%s" vol suffix |])
+         volumes);
+      (maybe_list
+         (fun container -> [| sprintf "--volumes-from=%s" container |])
+         volumes_from);
       Some([| image |]);
       argv
     ]
   in
   exec (command ("", dockerargv))
 
+type 'a run =
+  ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?volumes:(volume_source * volume_mountpoint * volume_option list) list -> ?volumes_from:container_id list -> ?argv:string array -> image_id -> 'a
+
+let __run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
+  (* don't let exceptions escape Lwt monad *)
+  try
+    _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image
+  with Invalid_argument _ as exn -> Lwt.fail exn
 
 let run =
-  _run exec_utility true false
+  __run "run" exec_utility true false
 
 let run_utility =
-  _run exec_utility false false
+  __run "run_utility" exec_utility false false
 
 let run_query =
-  _run exec_query false false
+  _run "run_query" exec_query false false
 
 let run_test =
-  _run exec_test false false
+  __run "run_test" exec_test false false
 
 let run_shell =
-  _run exec_shell false true
+  __run "run_shell" exec_shell false true
