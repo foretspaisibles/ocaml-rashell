@@ -209,7 +209,7 @@ let string_of_volume_option = function
   | `Relabel -> ":z"
   | `Relabel_private -> ":Z"
 
-let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
+let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?name ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
   let open Printf in
   let dockerargv =
     maybe_concat [
@@ -234,6 +234,7 @@ let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?dev
       (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) hostname);
       (maybe_list (fun container -> [| sprintf "--link=%s" container |]) link);
       (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) memory);
+      (maybe_map (fun name -> [| sprintf "--name=%s" name |]) name);
       (maybe_list
          (fun (host, container) -> [| sprintf "--publish=%d:%d" host container |])
          publish);
@@ -290,12 +291,12 @@ let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?dev
   exec (command ("", dockerargv))
 
 type 'a run =
-  ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?volumes:(volume_source * volume_mountpoint * volume_option list) list -> ?volumes_from:container_id list -> ?argv:string array -> image_id -> 'a
+  ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?name:string -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?volumes:(volume_source * volume_mountpoint * volume_option list) list -> ?volumes_from:container_id list -> ?argv:string array -> image_id -> 'a
 
-let __run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
+let __run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?name ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
   (* don't let exceptions escape Lwt monad *)
   try
-    _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image
+    _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?name ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image
   with Invalid_argument _ as exn -> Lwt.fail exn
 
 let run =

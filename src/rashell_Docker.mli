@@ -55,7 +55,7 @@ val restart : container_id list -> unit Lwt.t
 (** Restart a container, given its id. *)
 
 type 'a run =
-  ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?volumes:(volume_source * volume_mountpoint * volume_option list) list -> ?volumes_from:container_id list -> ?argv:string array -> image_id -> 'a
+  ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?name:string -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?volumes:(volume_source * volume_mountpoint * volume_option list) list -> ?volumes_from:container_id list -> ?argv:string array -> image_id -> 'a
 
 val run : container_id Lwt.t run
 (** Start a container in detached mode, the returned string is the
