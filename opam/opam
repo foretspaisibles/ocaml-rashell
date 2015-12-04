@@ -24,10 +24,11 @@ remove: [
 ]
 depends: [
   "ocamlfind"
-  "atdgen" {>= "1.7.1"}
-  "broken" {>= "0.4.2"}
-  "bsdowl" {>= "3.0.0"}
-  "lwt"    {>= "2.5.0"}
+  "atdgen"  {>= "1.7.1"}
+  "broken"  {>= "0.4.2"}
+  "bsdowl"  {>= "3.0.0"}
+  "lwt"     {>= "2.5.0"}
+  "mixture" {>= "0.2.0"}
 ]
 depexts: [
   [["debian"] ["bmake"]]
