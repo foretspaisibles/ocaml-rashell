@@ -45,7 +45,7 @@ type field = {
 }
 
 let error fmt =
-  Printf.ksprintf (fun s -> failwith(__MODULE__ ^": "^s)) fmt
+  Printf.ksprintf (fun s -> failwith("Rashell_Docker" ^": "^s)) fmt
 
 let field_make kwlist header =
   let open Str in
@@ -93,13 +93,13 @@ let to_alist name kwlist lst =
   | hd :: tl -> Lwt.return(
       List.map (field_extract (field_make kwlist hd)) tl
     )
-  | _ -> Lwt.fail_with(__MODULE__^": "^name^": Protocol mismatch.")
+  | _ -> Lwt.fail_with("Rashell_Docker"^": "^name^": Protocol mismatch.")
 
 let tags () =
   let triple_of_alist alist =
     let get field = List.assoc field alist in
     try (get "IMAGE ID", (get "REPOSITORY", get "TAG"))
-    with Not_found -> failwith(__MODULE__^": images: Protocol mismatch.")
+    with Not_found -> failwith("Rashell_Docker"^": images: Protocol mismatch.")
   in
   let pack lst =
     let images =
@@ -129,7 +129,7 @@ let _inspect of_json lst =
     with Ag_oj_run.Error(mesg) | Yojson.Json_error(mesg) ->
       prerr_endline s;
       Printf.ksprintf Lwt.fail_with "%s._inspect: %S: %s"
-        __MODULE__ s mesg
+        "Rashell_Docker" s mesg
   in
   if lst = [] then
     Lwt.return []
