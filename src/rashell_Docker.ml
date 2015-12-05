@@ -37,7 +37,7 @@ type volume_source =
 type volume_option =
   | RO
   | Relabel
-  | Relabel_private
+  | Relabel_Private
 
 type volume_mountpoint = string
 
@@ -233,7 +233,7 @@ let maybe_concat lst =
 let string_of_volume_option = function
   | RO -> ":ro"
   | Relabel -> ":z"
-  | Relabel_private -> ":Z"
+  | Relabel_Private -> ":Z"
 
 let options
      ?add_host ?argv ?cap_add ?cap_drop ?device ?entrypoint ?env ?expose

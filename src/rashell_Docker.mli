@@ -31,7 +31,7 @@ type volume_source =
 type volume_option =
   | RO
   | Relabel
-  | Relabel_private
+  | Relabel_Private
 
 type volume_mountpoint = string
 
