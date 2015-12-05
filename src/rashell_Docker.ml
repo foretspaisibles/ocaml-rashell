@@ -22,6 +22,11 @@ module Pool = Set.Make(String)
 type image_id     = string
 type container_id = string
 
+type restart_policy =
+  | Restart_No
+  | Restart_Always
+  | Restart_On_failure of int
+
 type volume_source =
   | Auto
   | Named of string
@@ -33,6 +38,30 @@ type volume_option =
   | Relabel_private
 
 type volume_mountpoint = string
+
+type options =
+    {
+      add_host     : (string * string) list option;
+      argv         : string array option;
+      cap_add      : string list option;
+      cap_drop     : string list option;
+      device       : string list option;
+      entrypoint   : string option;
+      env          : string array option;
+      expose       : string list option;
+      hostname     : string option;
+      link         : string list option;
+      memory       : int option;
+      name         : string option;
+      privileged   : bool option;
+      publish      : (int * int) list option;
+      restart      : restart_policy option;
+      tty          : bool option;
+      uid          : int option;
+      user         : string option;
+      volumes_from : container_id list option;
+      volumes      : (volume_source * volume_mountpoint * volume_option list) list option;
+    }
 
 let ps_keyword = [
   "CONTAINER ID";
@@ -132,11 +161,6 @@ let tags () =
     (fun (_,(container, tag)) -> container <> "<none>" && tag <> "<none>")
   >|= pack
 
-type restart_policy =
-  | Restart_No
-  | Restart_Always
-  | Restart_On_failure of int
-
 let _inspect of_json lst =
   let convert s =
     try Lwt.return(of_json s)
@@ -210,7 +234,17 @@ let string_of_volume_option = function
   | Relabel -> ":z"
   | Relabel_private -> ":Z"
 
-let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?name ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
+let options
+     ?add_host ?argv ?cap_add ?cap_drop ?device ?entrypoint ?env ?expose
+     ?hostname ?link ?memory ?name ?privileged ?publish ?restart ?tty
+     ?uid ?user ?volumes_from ?volumes () =
+  {
+    add_host; argv; cap_add; cap_drop; device; entrypoint; env; expose; hostname;
+    link; memory; name; privileged; publish; restart; tty; uid; user;
+    volumes_from; volumes;
+  }
+
+let _run funcname exec detach interactive opts image =
   let open Printf in
   let dockerargv =
     maybe_concat [
@@ -223,33 +257,33 @@ let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?dev
         |]);
       (maybe_list
          (fun (host, ip) -> [| "--add-host"; sprintf "%s:%s" host ip |])
-         add_host);
-      (maybe_list (fun cap -> [| "--cap-add"; cap |]) cap_add);
-      (maybe_list (fun cap -> [| "--cap-drop"; cap |]) cap_drop);
+         opts.add_host);
+      (maybe_list (fun cap -> [| "--cap-add"; cap |]) opts.cap_add);
+      (maybe_list (fun cap -> [| "--cap-drop"; cap |]) opts.cap_drop);
       (maybe_list
          (fun binding -> [| "--env"; binding |])
-         (match env with None -> None | Some(arr) -> Some(Array.to_list(arr))));
-      (maybe_list (fun dev -> [| "--device"; dev |]) device);
-      (maybe_map (fun cmd -> [| sprintf "--entrypoint=%s" cmd |]) entrypoint);
-      (maybe_list (fun spec -> [| sprintf "--expose=%s" spec |]) expose);
-      (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) hostname);
-      (maybe_list (fun container -> [| sprintf "--link=%s" container |]) link);
-      (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) memory);
-      (maybe_map (fun name -> [| sprintf "--name=%s" name |]) name);
+         (match opts.env with None -> None | Some(arr) -> Some(Array.to_list(arr))));
+      (maybe_list (fun dev -> [| "--device"; dev |]) opts.device);
+      (maybe_map (fun cmd -> [| sprintf "--entrypoint=%s" cmd |]) opts.entrypoint);
+      (maybe_list (fun spec -> [| sprintf "--expose=%s" spec |]) opts.expose);
+      (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) opts.hostname);
+      (maybe_list (fun container -> [| sprintf "--link=%s" container |]) opts.link);
+      (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) opts.memory);
+      (maybe_map (fun name -> [| sprintf "--name=%s" name |]) opts.name);
       (maybe_list
          (fun (host, container) -> [| sprintf "--publish=%d:%d" host container |])
-         publish);
-      (maybe_map (fun flag -> [| sprintf "--tty=%b" flag |]) tty);
-      (maybe_map (fun name -> [| sprintf "--user=%s" name |]) user);
-      (maybe_map (fun id -> [| sprintf "--user=%d" id |]) uid);
-      (maybe_map (fun flag -> [| sprintf "--privileged=%b" flag |]) privileged);
+         opts.publish);
+      (maybe_map (fun flag -> [| sprintf "--tty=%b" flag |]) opts.tty);
+      (maybe_map (fun name -> [| sprintf "--user=%s" name |]) opts.user);
+      (maybe_map (fun id -> [| sprintf "--user=%d" id |]) opts.uid);
+      (maybe_map (fun flag -> [| sprintf "--privileged=%b" flag |]) opts.privileged);
       (maybe_map
          (function
            | Restart_No -> [| "--restart=no" |]
            | Restart_Always -> [| "--restart=always" |]
            | Restart_On_failure(0) -> [| "--restart=on-failure" |]
            | Restart_On_failure(n) -> [| sprintf "--restart=on-failure:%d" n |])
-         restart);
+         opts.restart);
       (maybe_list
          (fun (src, dst, options) ->
 
@@ -281,23 +315,20 @@ let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?dev
                            (List.map string_of_volume_option options)
             in
               [| sprintf "--volume=%s%s" vol suffix |])
-         volumes);
+         opts.volumes);
       (maybe_list
          (fun container -> [| sprintf "--volumes-from=%s" container |])
-         volumes_from);
+         opts.volumes_from);
       Some([| image |]);
-      argv
+      opts.argv
     ]
   in
   exec (command ("", dockerargv))
 
-type 'a run =
-  ?add_host:(string * string) list -> ?cap_add:string list -> ?cap_drop:string list -> ?env:string array -> ?device:string list -> ?entrypoint:string -> ?expose:string list -> ?hostname:string -> ?link:string list -> ?memory:int -> ?name:string -> ?publish:(int*int)list -> ?tty:bool -> ?user:string -> ?uid:int -> ?privileged:bool -> ?restart:restart_policy -> ?volumes:(volume_source * volume_mountpoint * volume_option list) list -> ?volumes_from:container_id list -> ?argv:string array -> image_id -> 'a
-
-let __run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?name ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
+let __run funcname exec detach interactive opts image =
   (* don't let exceptions escape Lwt monad *)
   try
-    _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?name ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image
+    _run funcname exec detach interactive opts image
   with Invalid_argument _ as exn -> Lwt.fail exn
 
 let run =
