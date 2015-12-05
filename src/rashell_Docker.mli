@@ -22,12 +22,14 @@ type restart_policy =
   | Restart_On_failure of int
 
 type volume_source =
-    [ `Auto
-    | `Named of string
-    | `Path of string
-    ]
+  | Auto
+  | Named of string
+  | Path of string
+
 type volume_option =
-    [ `RO | `Relabel | `Relabel_private ]
+  | RO
+  | Relabel
+  | Relabel_private
 
 type volume_mountpoint = string
 

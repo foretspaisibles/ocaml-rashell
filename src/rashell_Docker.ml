@@ -23,13 +23,14 @@ type image_id     = string
 type container_id = string
 
 type volume_source =
-    [ `Auto
-    | `Named of string
-    | `Path of string
-    ]
+  | Auto
+  | Named of string
+  | Path of string
 
 type volume_option =
-    [ `RO | `Relabel | `Relabel_private ]
+  | RO
+  | Relabel
+  | Relabel_private
 
 type volume_mountpoint = string
 
@@ -205,9 +206,9 @@ let maybe_concat lst =
   Array.concat(List.map maybe_get lst)
 
 let string_of_volume_option = function
-  | `RO -> ":ro"
-  | `Relabel -> ":z"
-  | `Relabel_private -> ":Z"
+  | RO -> ":ro"
+  | Relabel -> ":z"
+  | Relabel_private -> ":Z"
 
 let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?name ?publish ?tty ?user ?uid ?privileged ?restart ?volumes ?volumes_from ?argv image =
   let open Printf in
@@ -266,9 +267,9 @@ let _run funcname exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?dev
                    funcname);
 
             let vol = match src with
-              | `Auto -> dst
-              | `Named volname -> sprintf "%s:%s" volname dst
-              | `Path src ->
+              | Auto -> dst
+              | Named volname -> sprintf "%s:%s" volname dst
+              | Path src ->
                   if Filename.is_relative src then
                     invalid_arg
                       (sprintf
