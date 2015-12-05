@@ -21,6 +21,8 @@ type restart_policy =
   | Restart_Always
   | Restart_On_failure of int
 
+type user = User_ID of int | User_Name of string
+
 type volume_source =
   | Auto
   | Named of string
@@ -76,8 +78,7 @@ val options :
   ?publish:(int*int)list ->
   ?restart:restart_policy ->
   ?tty:bool ->
-  ?uid:int ->
-  ?user:string ->
+  ?user:user ->
   ?volumes_from:container_id list ->
   ?volumes:(volume_source * volume_mountpoint * volume_option list) list ->
   unit ->

@@ -27,6 +27,8 @@ type restart_policy =
   | Restart_Always
   | Restart_On_failure of int
 
+type user = User_ID of int | User_Name of string
+
 type volume_source =
   | Auto
   | Named of string
@@ -57,8 +59,7 @@ type options =
       publish      : (int * int) list option;
       restart      : restart_policy option;
       tty          : bool option;
-      uid          : int option;
-      user         : string option;
+      user         : user option;
       volumes_from : container_id list option;
       volumes      : (volume_source * volume_mountpoint * volume_option list) list option;
     }
@@ -237,10 +238,10 @@ let string_of_volume_option = function
 let options
      ?add_host ?argv ?cap_add ?cap_drop ?device ?entrypoint ?env ?expose
      ?hostname ?link ?memory ?name ?privileged ?publish ?restart ?tty
-     ?uid ?user ?volumes_from ?volumes () =
+     ?user ?volumes_from ?volumes () =
   {
     add_host; argv; cap_add; cap_drop; device; entrypoint; env; expose; hostname;
-    link; memory; name; privileged; publish; restart; tty; uid; user;
+    link; memory; name; privileged; publish; restart; tty; user;
     volumes_from; volumes;
   }
 
@@ -274,8 +275,11 @@ let _run funcname exec detach interactive opts image =
          (fun (host, container) -> [| sprintf "--publish=%d:%d" host container |])
          opts.publish);
       (maybe_map (fun flag -> [| sprintf "--tty=%b" flag |]) opts.tty);
-      (maybe_map (fun name -> [| sprintf "--user=%s" name |]) opts.user);
-      (maybe_map (fun id -> [| sprintf "--user=%d" id |]) opts.uid);
+      (maybe_map
+         (function
+            | User_ID uid -> [| sprintf "--user=%d" uid |]
+            | User_Name name -> [| sprintf "--user=%s" name |])
+         opts.user);
       (maybe_map (fun flag -> [| sprintf "--privileged=%b" flag |]) opts.privileged);
       (maybe_map
          (function
