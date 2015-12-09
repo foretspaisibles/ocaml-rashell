@@ -58,7 +58,28 @@ val rmi : image_id list -> unit Lwt.t
 val restart : container_id list -> unit Lwt.t
 (** Restart a container, given its id. *)
 
-type options
+type options =
+    {
+      add_host     : (string * string) list option;
+      argv         : string array option;
+      cap_add      : string list option;
+      cap_drop     : string list option;
+      device       : string list option;
+      entrypoint   : string option;
+      env          : string array option;
+      expose       : string list option;
+      hostname     : string option;
+      link         : string list option;
+      memory       : int option;
+      name         : string option;
+      privileged   : bool option;
+      publish      : (int * int) list option;
+      restart      : restart_policy option;
+      tty          : bool option;
+      user         : user option;
+      volumes_from : container_id list option;
+      volumes      : (volume_source * volume_mountpoint * volume_option list) list option;
+    }
 (** Options for container execution. *)
 
 val options :
