@@ -110,16 +110,16 @@ val run : options -> image_id -> container_id Lwt.t
     container id. *)
 
 val run_utility : options -> image_id -> string Lwt.t
-(*** Start a container in attached mode, and return the standard
-     output of the program. *)
+(** Start a container in attached mode, and return the standard
+    output of the program. *)
 
 val run_query : options -> image_id -> string Lwt_stream.t
-(*** Start a container in attached mode, and return the lines
-     written on standard output by the program. *)
+(** Start a container in attached mode, and return the lines
+    written on standard output by the program. *)
 
 val run_test : options -> image_id -> bool Lwt.t
-(*** Start a container in attached mode, and interpret its return
-     status as a predicate. *)
+(** Start a container in attached mode, and interpret its return
+    status as a predicate. *)
 
 val run_shell : options -> image_id -> unit Lwt.t
-(*** Start a custom shell in a container. *)
+(** Start a custom shell in a container. *)
