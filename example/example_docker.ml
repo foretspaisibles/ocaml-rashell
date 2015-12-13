@@ -38,6 +38,6 @@ let listtags () =
 
 let shell () =
   Rashell_Docker.(run_shell
-                    (options ~tty:true ~argv:[| "/bin/sh" |] ()) "debian:jessie")
+                    (command ~tty:true ~argv:[| "/bin/sh" |] "debian:jessie"))
 
 let () = Lwt_main.run (listtags())

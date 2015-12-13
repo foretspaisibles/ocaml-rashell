@@ -58,7 +58,7 @@ val rmi : image_id list -> unit Lwt.t
 val restart : container_id list -> unit Lwt.t
 (** Restart a container, given its id. *)
 
-type options =
+type command =
     {
       add_host     : (string * string) list option;
       argv         : string array option;
@@ -69,6 +69,7 @@ type options =
       env          : string array option;
       expose       : int list option;
       hostname     : string option;
+      image_id     : image_id;
       link         : string list option;
       memory       : int option;
       name         : string option;
@@ -82,7 +83,7 @@ type options =
     }
 (** Options for container execution. *)
 
-val options :
+val command :
   ?add_host:(string * string) list ->
   ?argv:string array ->
   ?cap_add:string list ->
@@ -102,24 +103,24 @@ val options :
   ?user:user ->
   ?volumes_from:container_id list ->
   ?volumes:(volume_source * volume_mountpoint * volume_option list) list ->
-  unit ->
-  options
+  image_id ->
+  command
 
-val run : options -> image_id -> container_id Lwt.t
+val run : command -> container_id Lwt.t
 (** Start a container in detached mode, the returned string is the
     container id. *)
 
-val run_utility : options -> image_id -> string Lwt.t
+val run_utility : command -> string Lwt.t
 (** Start a container in attached mode, and return the standard
     output of the program. *)
 
-val run_query : options -> image_id -> string Lwt_stream.t
+val run_query : command -> string Lwt_stream.t
 (** Start a container in attached mode, and return the lines
     written on standard output by the program. *)
 
-val run_test : options -> image_id -> bool Lwt.t
+val run_test : command -> bool Lwt.t
 (** Start a container in attached mode, and interpret its return
     status as a predicate. *)
 
-val run_shell : options -> image_id -> unit Lwt.t
+val run_shell : command -> unit Lwt.t
 (** Start a custom shell in a container. *)
