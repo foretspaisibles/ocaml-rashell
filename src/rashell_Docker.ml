@@ -50,7 +50,7 @@ type options =
       device       : string list option;
       entrypoint   : string option;
       env          : string array option;
-      expose       : string list option;
+      expose       : int list option;
       hostname     : string option;
       link         : string list option;
       memory       : int option;
@@ -266,7 +266,7 @@ let _run funcname exec detach interactive opts image =
          (match opts.env with None -> None | Some(arr) -> Some(Array.to_list(arr))));
       (maybe_list (fun dev -> [| "--device"; dev |]) opts.device);
       (maybe_map (fun cmd -> [| sprintf "--entrypoint=%s" cmd |]) opts.entrypoint);
-      (maybe_list (fun spec -> [| sprintf "--expose=%s" spec |]) opts.expose);
+      (maybe_list (fun spec -> [| sprintf "--expose=%d" spec |]) opts.expose);
       (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) opts.hostname);
       (maybe_list (fun container -> [| sprintf "--link=%s" container |]) opts.link);
       (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) opts.memory);

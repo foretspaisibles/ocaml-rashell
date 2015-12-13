@@ -67,7 +67,7 @@ type options =
       device       : string list option;
       entrypoint   : string option;
       env          : string array option;
-      expose       : string list option;
+      expose       : int list option;
       hostname     : string option;
       link         : string list option;
       memory       : int option;
@@ -90,7 +90,7 @@ val options :
   ?device:string list ->
   ?entrypoint:string ->
   ?env:string array ->
-  ?expose:string list ->
+  ?expose:int list ->
   ?hostname:string ->
   ?link:string list ->
   ?memory:int ->
