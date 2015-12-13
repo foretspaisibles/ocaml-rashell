@@ -19,6 +19,51 @@ open Lwt.Infix
 
 module Pool = Set.Make(String)
 
+type image_id     = string
+type container_id = string
+
+type restart_policy =
+  | Restart_No
+  | Restart_Always
+  | Restart_On_failure of int
+
+type user = User_ID of int | User_Name of string
+
+type volume_source =
+  | Auto
+  | Named of string
+  | Path of string
+
+type volume_option =
+  | RO
+  | Relabel
+  | Relabel_Private
+
+type volume_mountpoint = string
+
+type command =
+    {
+      add_host     : (string * string) list option;
+      argv         : string array option;
+      cap_add      : string list option;
+      cap_drop     : string list option;
+      device       : string list option;
+      entrypoint   : string option;
+      env          : string array option;
+      expose       : int list option;
+      hostname     : string option;
+      image_id     : image_id;
+      link         : string list option;
+      memory       : int option;
+      name         : string option;
+      privileged   : bool option;
+      publish      : (int * int) list option;
+      restart      : restart_policy option;
+      tty          : bool option;
+      user         : user option;
+      volumes_from : container_id list option;
+      volumes      : (volume_source * volume_mountpoint * volume_option list) list option;
+    }
 
 let ps_keyword = [
   "CONTAINER ID";
@@ -118,11 +163,6 @@ let tags () =
     (fun (_,(container, tag)) -> container <> "<none>" && tag <> "<none>")
   >|= pack
 
-type restart_policy =
-  | Restart_No
-  | Restart_Always
-  | Restart_On_failure of int
-
 let _inspect of_json lst =
   let convert s =
     try Lwt.return(of_json s)
@@ -191,7 +231,12 @@ let maybe_list f =
 let maybe_concat lst =
   Array.concat(List.map maybe_get lst)
 
-let _run exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entrypoint ?expose ?hostname ?link ?memory ?publish ?tty ?user ?uid ?privileged ?restart ?argv image =
+let string_of_volume_option = function
+  | RO -> ":ro"
+  | Relabel -> ":z"
+  | Relabel_Private -> ":Z"
+
+let _run funcname exec detach interactive cmd =
   let open Printf in
   let dockerargv =
     maybe_concat [
@@ -204,50 +249,104 @@ let _run exec detach interactive ?add_host ?cap_add ?cap_drop ?env ?device ?entr
         |]);
       (maybe_list
          (fun (host, ip) -> [| "--add-host"; sprintf "%s:%s" host ip |])
-         add_host);
-      (maybe_list (fun cap -> [| "--cap-add"; cap |]) cap_add);
-      (maybe_list (fun cap -> [| "--cap-drop"; cap |]) cap_drop);
+         cmd.add_host);
+      (maybe_list (fun cap -> [| "--cap-add"; cap |]) cmd.cap_add);
+      (maybe_list (fun cap -> [| "--cap-drop"; cap |]) cmd.cap_drop);
       (maybe_list
          (fun binding -> [| "--env"; binding |])
-         (match env with None -> None | Some(arr) -> Some(Array.to_list(arr))));
-      (maybe_list (fun dev -> [| "--device"; dev |]) device);
-      (maybe_map (fun cmd -> [| sprintf "--entrypoint=%s" cmd |]) entrypoint);
-      (maybe_list (fun spec -> [| sprintf "--expose=%s" spec |]) expose);
-      (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) hostname);
-      (maybe_list (fun container -> [| sprintf "--link=%s" container |]) link);
-      (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) memory);
+         (match cmd.env with None -> None | Some(arr) -> Some(Array.to_list(arr))));
+      (maybe_list (fun dev -> [| "--device"; dev |]) cmd.device);
+      (maybe_map (fun cmd -> [| sprintf "--entrypoint=%s" cmd |]) cmd.entrypoint);
+      (maybe_list (fun spec -> [| sprintf "--expose=%d" spec |]) cmd.expose);
+      (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) cmd.hostname);
+      (maybe_list (fun container -> [| sprintf "--link=%s" container |]) cmd.link);
+      (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) cmd.memory);
+      (maybe_map (fun name -> [| sprintf "--name=%s" name |]) cmd.name);
       (maybe_list
          (fun (host, container) -> [| sprintf "--publish=%d:%d" host container |])
-         publish);
-      (maybe_map (fun flag -> [| sprintf "--tty=%b" flag |]) tty);
-      (maybe_map (fun name -> [| sprintf "--user=%s" name |]) user);
-      (maybe_map (fun id -> [| sprintf "--user=%d" id |]) uid);
-      (maybe_map (fun flag -> [| sprintf "--privileged=%b" flag |]) privileged);
+         cmd.publish);
+      (maybe_map (fun flag -> [| sprintf "--tty=%b" flag |]) cmd.tty);
+      (maybe_map
+         (function
+            | User_ID uid -> [| sprintf "--user=%d" uid |]
+            | User_Name name -> [| sprintf "--user=%s" name |])
+         cmd.user);
+      (maybe_map (fun flag -> [| sprintf "--privileged=%b" flag |]) cmd.privileged);
       (maybe_map
          (function
            | Restart_No -> [| "--restart=no" |]
            | Restart_Always -> [| "--restart=always" |]
            | Restart_On_failure(0) -> [| "--restart=on-failure" |]
            | Restart_On_failure(n) -> [| sprintf "--restart=on-failure:%d" n |])
-         restart);
-      Some([| image |]);
-      argv
+         cmd.restart);
+      (maybe_list
+         (fun (src, dst, options) ->
+
+            (* TODO: should we check that
+             *   (a) the volume name is correct (alphanumeric
+             *       character, followed by [a-z0-9_.-]+)
+             *   (b) the source path exists
+             *
+             * or let docker run fail?
+             **)
+            if Filename.is_relative dst then
+              invalid_arg
+                (sprintf
+                   "Rashell_Docker.%s: volume destination is not absolute"
+                   funcname);
+
+            let vol = match src with
+              | Auto -> dst
+              | Named volname -> sprintf "%s:%s" volname dst
+              | Path src ->
+                  if Filename.is_relative src then
+                    invalid_arg
+                      (sprintf
+                         "Rashell_Docker.%s: volume source is not absolute"
+                         funcname);
+                  Printf.sprintf "%s:%s" src dst in
+
+            let suffix = String.concat ""
+                           (List.map string_of_volume_option options)
+            in
+              [| sprintf "--volume=%s%s" vol suffix |])
+         cmd.volumes);
+      (maybe_list
+         (fun container -> [| sprintf "--volumes-from=%s" container |])
+         cmd.volumes_from);
+      Some([| cmd.image_id |]);
+      cmd.argv
     ]
   in
   exec (command ("", dockerargv))
 
+let __run funcname exec detach interactive cmd =
+  (* don't let exceptions escape Lwt monad *)
+  try
+    _run funcname exec detach interactive cmd
+  with Invalid_argument _ as exn -> Lwt.fail exn
 
 let run =
-  _run exec_utility true false
+  __run "run" exec_utility true false
 
 let run_utility =
-  _run exec_utility false false
+  __run "run_utility" exec_utility false false
 
 let run_query =
-  _run exec_query false false
+  _run "run_query" exec_query false false
 
 let run_test =
-  _run exec_test false false
+  __run "run_test" exec_test false false
 
 let run_shell =
-  _run exec_shell false true
+  __run "run_shell" exec_shell false true
+
+let command
+     ?add_host ?argv ?cap_add ?cap_drop ?device ?entrypoint ?env ?expose
+     ?hostname ?link ?memory ?name ?privileged ?publish ?restart ?tty
+     ?user ?volumes_from ?volumes image_id =
+  {
+    add_host; argv; cap_add; cap_drop; device; entrypoint; env; expose; hostname;
+    image_id; link; memory; name; privileged; publish; restart; tty; user;
+    volumes_from; volumes;
+  }

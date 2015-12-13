@@ -37,6 +37,7 @@ let listtags () =
             (List.map (fun (container, tag) -> container^":"^tag) tags)))
 
 let shell () =
-  Rashell_Docker.run_shell ~tty:true ~argv:[| "/bin/sh" |] "debian:jessie"
+  Rashell_Docker.(run_shell
+                    (command ~tty:true ~argv:[| "/bin/sh" |] "debian:jessie"))
 
 let () = Lwt_main.run (listtags())
