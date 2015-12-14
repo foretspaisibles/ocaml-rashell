@@ -53,6 +53,7 @@ type command =
       expose       : int list option;
       hostname     : string option;
       image_id     : image_id;
+      labels       : (string * string) list option;
       link         : string list option;
       memory       : int option;
       name         : string option;
@@ -259,6 +260,8 @@ let _run funcname exec detach interactive cmd =
       (maybe_map (fun cmd -> [| sprintf "--entrypoint=%s" cmd |]) cmd.entrypoint);
       (maybe_list (fun spec -> [| sprintf "--expose=%d" spec |]) cmd.expose);
       (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) cmd.hostname);
+      (maybe_list
+         (fun (k, v) -> [| sprintf "--label=%s=%s" k v |]) cmd.labels);
       (maybe_list (fun container -> [| sprintf "--link=%s" container |]) cmd.link);
       (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) cmd.memory);
       (maybe_map (fun name -> [| sprintf "--name=%s" name |]) cmd.name);
@@ -343,10 +346,10 @@ let run_shell =
 
 let command
      ?add_host ?argv ?cap_add ?cap_drop ?device ?entrypoint ?env ?expose
-     ?hostname ?link ?memory ?name ?privileged ?publish ?restart ?tty
+     ?hostname ?labels ?link ?memory ?name ?privileged ?publish ?restart ?tty
      ?user ?volumes_from ?volumes image_id =
   {
     add_host; argv; cap_add; cap_drop; device; entrypoint; env; expose; hostname;
-    image_id; link; memory; name; privileged; publish; restart; tty; user;
+    image_id; labels; link; memory; name; privileged; publish; restart; tty; user;
     volumes_from; volumes;
   }
