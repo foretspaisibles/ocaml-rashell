@@ -327,7 +327,7 @@ let __run funcname exec detach interactive cmd =
   with Invalid_argument _ as exn -> Lwt.fail exn
 
 let run =
-  __run "run" exec_utility true false
+  __run "run" (exec_utility ~chomp:true) true false
 
 let run_utility =
   __run "run_utility" exec_utility false false
