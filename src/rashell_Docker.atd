@@ -71,7 +71,17 @@ type container = {
   ?volumes			<json name="Volumes">:		(string * string) list <json repr="object"> nullable;
   ?volumes_rw			<json name="VolumesRW">:	(string * bool) list <json repr="object"> nullable;
   state				<json name="State">:		state;
+  ~mounts  <ocaml default="[]"> <json name="Mounts">:		mount list;
 } <ocaml field_prefix="container_">
+
+type mount = {
+  source			<json name="Source">:		string;
+  destination			<json name="Destination">:	string;
+  rw				<json name="RW">:		bool;
+  (* mode				<json name="Mode">:		???; *)
+} <ocaml field_prefix="mount_">
 
 type containers = container list
 type images = image list
+
+(* vim: set ft=ocaml ts=8 noexpandtab: *)
