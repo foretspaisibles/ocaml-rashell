@@ -33,6 +33,7 @@ type config = {
   hostname			<json name="Hostname">:		string;
   image				<json name="Image">:		string;
   working_dir			<json name="WorkingDir">:	string;
+  ~labels  <ocaml default="[]"> <json name="Labels">:		(string * string) list <json repr="object">;
 } <ocaml field_prefix="config_">
 
 type image = {

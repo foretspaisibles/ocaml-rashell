@@ -70,6 +70,7 @@ type command =
       expose       : int list option;
       hostname     : string option;
       image_id     : image_id;
+      labels       : (string * string) list option;
       link         : string list option;
       memory       : int option;
       name         : string option;
@@ -93,6 +94,7 @@ val command :
   ?env:string array ->
   ?expose:int list ->
   ?hostname:string ->
+  ?labels:(string * string) list ->
   ?link:string list ->
   ?memory:int ->
   ?name:string ->
