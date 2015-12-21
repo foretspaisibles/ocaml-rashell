@@ -57,6 +57,7 @@ type command =
       link         : string list option;
       memory       : int option;
       name         : string option;
+      net          : string option;
       privileged   : bool option;
       publish      : (int * int) list option;
       restart      : restart_policy option;
@@ -265,6 +266,7 @@ let _run funcname exec detach interactive cmd =
       (maybe_list (fun container -> [| sprintf "--link=%s" container |]) cmd.link);
       (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) cmd.memory);
       (maybe_map (fun name -> [| sprintf "--name=%s" name |]) cmd.name);
+      (maybe_map (fun net -> [| sprintf "--net=%s" net |]) cmd.net);
       (maybe_list
          (fun (host, container) -> [| sprintf "--publish=%d:%d" host container |])
          cmd.publish);
@@ -346,10 +348,10 @@ let run_shell =
 
 let command
      ?add_host ?argv ?cap_add ?cap_drop ?device ?entrypoint ?env ?expose
-     ?hostname ?labels ?link ?memory ?name ?privileged ?publish ?restart ?tty
+     ?hostname ?labels ?link ?memory ?name ?net ?privileged ?publish ?restart ?tty
      ?user ?volumes_from ?volumes image_id =
   {
     add_host; argv; cap_add; cap_drop; device; entrypoint; env; expose; hostname;
-    image_id; labels; link; memory; name; privileged; publish; restart; tty; user;
-    volumes_from; volumes;
+    image_id; labels; link; memory; name; net; privileged; publish; restart; tty;
+    user; volumes_from; volumes;
   }

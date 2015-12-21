@@ -74,6 +74,7 @@ type command =
       link         : string list option;
       memory       : int option;
       name         : string option;
+      net          : string option;
       privileged   : bool option;
       publish      : (int * int) list option;
       restart      : restart_policy option;
@@ -98,6 +99,7 @@ val command :
   ?link:string list ->
   ?memory:int ->
   ?name:string ->
+  ?net:string ->
   ?privileged:bool ->
   ?publish:(int*int)list ->
   ?restart:restart_policy ->
