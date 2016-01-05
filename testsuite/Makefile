@@ -14,6 +14,7 @@
 PROGRAM=		unit_testing
 
 SRCS=			toolbox.ml
+SRCS+=			testCommand.ml
 SRCS+=			testMktemp.ml
 SRCS+=			testPosix.ml
 SRCS+=			testTimestamp.ml
