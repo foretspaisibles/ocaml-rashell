@@ -1,6 +1,6 @@
 dnl autoconf macros for BSD Owl
 dnl
-dnl Copyright © 2015 Michael Grünewald
+dnl Copyright © 2015—2016 Michael Grünewald
 
 # AC_WITH_OCAML_SITE_LIB
 # ----------------------

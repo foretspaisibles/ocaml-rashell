@@ -3,7 +3,7 @@
    Rashell (https://github.com/michipili/rashell)
    This file is part of Rashell
 
-   Copyright © 2015 Michael Grünewald
+   Copyright © 2015—2016 Michael Grünewald
 
    This file must be used under the terms of the CeCILL-B.
    This source file is licensed as described in the file COPYING, which
