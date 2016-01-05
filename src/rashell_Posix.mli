@@ -85,7 +85,7 @@ val cp :
   string list -> string -> string Lwt_stream.t
 (** [cp pathlst dest] wraper of the
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/cp.html} cp(1)}
-    command, called with the verbose flag. *)
+    command. *)
 
 val rm :
   ?workdir:string ->
@@ -95,7 +95,7 @@ val rm :
   string list -> string Lwt_stream.t
 (** [rm pathlst] wrapper of the
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/rm.html} rm(1)}
-    command, called with the verbose flag. *)
+    command. *)
 
 val mv :
   ?workdir:string ->
@@ -104,7 +104,7 @@ val mv :
   string list -> string -> string Lwt_stream.t
 (** [mv pathlst dest] wrapper of the
     {{:http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mv.html} mv(1)}
-    command, called with the verbose flag. *)
+    command. *)
 
 val ln :
   ?workdir:string ->

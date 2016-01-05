@@ -170,58 +170,66 @@ let test ?(workdir = "") ?env ?(follow = false) predicate file =
     (fun s -> Lwt.wrap (fun () -> _test_stat cache file s predicate))
     (fun _ -> Lwt.return_false)
 
+let _destination path dest =
+  Filename.concat dest (Filename.basename path)
+
 let cp ?workdir ?env
     ?(follow = false) ?(force = false) ?(recursive = false) pathlst dest =
-  let argv = Array.concat [
-      [| ac_path_cp; "-v" |];
+  let argv path = Array.concat [
+      [| ac_path_cp; |];
       (flag "-H" follow);
       (flag "-f" force);
       (flag "-R" recursive);
-      Array.of_list pathlst;
-      [| dest |];
+      [| path; dest |];
     ]
   in
-  match pathlst with
-  | [] -> Lwt_stream.of_list []
-  | _ -> exec_query (command ?workdir ?env (ac_path_cp, argv))
+  let loop path =
+    exec_utility (command ?workdir ?env (ac_path_cp, argv path))
+    >|= fun _ -> _destination path dest
+  in
+  Lwt_stream.map_s loop (Lwt_stream.of_list pathlst)
 
 let rm ?workdir ?env ?(force = false) ?(recursive = false) pathlst =
-  let argv = Array.concat [
-      [| ac_path_rm; "-v" |];
+  let argv path = Array.concat [
+      [| ac_path_rm; |];
       (flag "-f" force);
       (flag "-R" recursive);
-      Array.of_list pathlst;
+      [| path |];
     ]
   in
-  match pathlst with
-  | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env (ac_path_rm, argv))
+  let loop path =
+    exec_utility (command ?workdir ?env (ac_path_rm, argv path))
+    >|= fun _ -> path
+  in
+  Lwt_stream.map_s loop (Lwt_stream.of_list pathlst)
 
 let mv ?workdir ?env ?(force = false) pathlst dest =
-  let argv = Array.concat [
-      [| ac_path_mv; "-v" |];
+  let argv path = Array.concat [
+      [| ac_path_mv; |];
       (flag "-f" force);
-      Array.of_list pathlst;
-      [| dest |]
+      [| path; dest |]
     ]
   in
-  match pathlst with
-  | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env (ac_path_mv, argv))
+  let loop path =
+    exec_utility (command ?workdir ?env (ac_path_mv, argv path))
+    >|= fun _ -> _destination path dest
+  in
+  Lwt_stream.map_s loop (Lwt_stream.of_list pathlst)
 
 
 let ln ?workdir ?env ?(force = false) ?(symbolic = false) pathlst dest =
-  let argv = Array.concat [
+  let argv path = Array.concat [
       [| ac_path_ln; "-v" |];
       (flag "-f" force);
       (flag "-s" symbolic);
-      Array.of_list pathlst;
-      [| dest |]
+      [| path; dest |]
     ]
   in
-  match pathlst with
-  | [] -> Lwt_stream.of_list []
-  | _ -> exec_query(command ?workdir ?env (ac_path_ln, argv))
+  let loop path =
+    exec_utility (command ?workdir ?env (ac_path_ln, argv path))
+    >|= fun _ -> _destination path dest
+  in
+  Lwt_stream.map_s loop (Lwt_stream.of_list pathlst)
 
 
 let sed ?workdir ?env ?(echo = true) script pathlst =
