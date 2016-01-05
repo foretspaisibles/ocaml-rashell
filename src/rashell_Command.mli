@@ -112,8 +112,17 @@ val which : ?path:string list -> string -> string option Lwt.t
 
 val expand_path : string -> string
 (** [expand_path name] expand a leading ['~'] and environment
-    variables in [name]. If the environment variable {i HOME} is not
-    set, then the root of the file-system os used. *)
+    variables in [name].
+
+    The strategy is to use the password database on Unix and to
+    fallback on the HOME variable if it fails or the HOMEDRIVE and
+    HOMEPATH variables.  If all of this fails, it uses "/" as a home
+    directory.
+
+    Expressions like ['~USER'] are expanded using the password
+    database and are only supported on Unix.
+
+    @raise Failure if ['~USER'] cannot be expanded.*)
 
 val chomp : string -> string
 (** [chomp s] remove the last character of [s] if it is a newline

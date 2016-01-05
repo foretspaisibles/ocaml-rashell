@@ -304,22 +304,46 @@ let which ?path file =
 let expand_path name =
   let open Str in
   let buf = Buffer.create (String.length name) in
-  let home =
-    try Sys.getenv "HOME"
-    with Not_found -> "/"
-  in
   let getenv key =
     try Sys.getenv key
     with Not_found -> ""
   in
+  let homedir_other user =
+    try Unix.((getpwnam user).pw_dir)
+    with Not_found ->
+      Printf.ksprintf failwith "Rashell_Command.expand_path: %S: Cannot find user in the passwd database." user
+  in
+  let homedir_self () =
+    let passwd () =
+      try Some(Unix.((getpwuid (getuid())).pw_dir))
+      with Not_found -> None
+    in
+    let home () =
+      try Some(Sys.getenv "HOME")
+      with Not_found -> None
+    in
+    let homedrive () =
+      try Some(Filename.concat (Sys.getenv "HOMEDRIVE") (Sys.getenv "HOMEPATH"))
+      with Not_found -> None
+    in
+    let loop ax f =
+      match ax with
+      | None -> f ()
+      | Some(_) -> ax
+    in
+    match List.fold_left loop None [ passwd; home; homedrive ] with
+    | Some(homedir) -> homedir
+    | None -> "/"
+  in
   let newname =
     substitute_first
       (regexp "^~[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-]*")
-      (fun s -> if String.length s > 0 then
-          (replace_first (regexp "//*[.][.]//*") "/../"
-             (home ^ "/../" ^ (string_after s 1)))
-        else
-          home)
+      (fun s ->
+         let tildexpr = matched_string s in
+         if String.length tildexpr > 1 then
+           homedir_other (string_after tildexpr 1)
+         else
+           homedir_self())
       name
   in
   Buffer.add_substitute buf getenv newname;
