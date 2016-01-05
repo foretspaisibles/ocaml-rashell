@@ -29,6 +29,9 @@ let ac_path_docker =
 let ac_path_find =
   "@FIND@"
 
+let ac_path_git =
+  "@GIT@"
+
 let ac_path_grep =
   "@GREP@"
 

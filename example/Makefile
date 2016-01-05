@@ -17,6 +17,10 @@ PROGRAM=		example
 PROGRAM+=		example_docker
 .endif
 
+.if empty(WITH_GIT:Mno)
+PROGRAM+=		example_git
+.endif
+
 install:
 	${NOP}
 
