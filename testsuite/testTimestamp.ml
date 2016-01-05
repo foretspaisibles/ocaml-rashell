@@ -138,6 +138,3 @@ let () =
   |@ test_to_string ()
   |@ test_measure_interval ()
   |> register
-
-let () =
-  Printf.eprintf "Offset: %f\n" Rashell_Timestamp.offset
