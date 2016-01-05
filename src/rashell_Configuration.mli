@@ -29,6 +29,9 @@ val ac_path_docker : string
 val ac_path_find : string
 (** The compile-time path to the find program. *)
 
+val ac_path_git : string
+(** The compile-time path to the git program. *)
+
 val ac_path_grep : string
 (** The compile-time path to the grep program. *)
 

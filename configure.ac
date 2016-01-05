@@ -63,6 +63,29 @@ AC_ARG_WITH([docker],
    AS_IF([test "${DOCKER}" = '/nonexistant'], [WITH_DOCKER='no'], [WITH_DOCKER='yes'])])
 AC_SUBST([WITH_DOCKER])
 
+
+# GIT command line tool
+#
+#   Support of GIT using the command line tool.
+
+AC_ARG_WITH([git],
+  [AS_HELP_STRING([--with-git],
+    [add GIT support through the command-line tool.])],
+  [WITH_GIT=${with_git}
+    case $with_git in
+    no)
+      GIT='/nonexistant'
+      ;;
+    yes)
+      AC_PATH_PROG_REQUIRE([GIT], [git])
+      ;;
+    *)
+      GIT="${with_git}"
+      ;;
+    esac;],
+  [WITH_GIT='no'; GIT='/nonexistant';])
+
+
 AC_CONFIG_FILES([Makefile.config src/rashell_Configuration.ml])
 AC_OUTPUT
 
