@@ -23,6 +23,9 @@ type restart_policy =
 
 type user = User_ID of int | User_Name of string
 
+type address = string
+type ports   = Single of int | Range of int * int
+
 type volume_source =
   | Auto
   | Named of string
@@ -77,6 +80,7 @@ type command =
       net          : string option;
       privileged   : bool option;
       publish      : (int * int) list option;
+      publish_gen  : (address option * ports option * ports) list option;
       restart      : restart_policy option;
       tty          : bool option;
       user         : user option;
@@ -102,6 +106,7 @@ val command :
   ?net:string ->
   ?privileged:bool ->
   ?publish:(int*int)list ->
+  ?publish_gen:(address option * ports option * ports) list ->
   ?restart:restart_policy ->
   ?tty:bool ->
   ?user:user ->
