@@ -29,6 +29,9 @@ type restart_policy =
 
 type user = User_ID of int | User_Name of string
 
+type address = string
+type ports   = Single of int | Range of int * int
+
 type volume_source =
   | Auto
   | Named of string
@@ -60,6 +63,7 @@ type command =
       net          : string option;
       privileged   : bool option;
       publish      : (int * int) list option;
+      publish_gen  : (address option * ports option * ports) list option;
       restart      : restart_policy option;
       tty          : bool option;
       user         : user option;
@@ -270,6 +274,17 @@ let _run funcname exec detach interactive cmd =
       (maybe_list
          (fun (host, container) -> [| sprintf "--publish=%d:%d" host container |])
          cmd.publish);
+      (maybe_list
+         (fun (addr, host, container) ->
+            let string_of_ports = function
+              | Single p -> string_of_int p
+              | Range (l, h) -> sprintf "%d-%d" l h
+            in
+              [| sprintf "--publish=%s:%s:%s"
+                   (match addr with Some s -> s | None -> "")
+                   (match host with Some h -> string_of_ports h | None -> "")
+                   (string_of_ports container) |])
+         cmd.publish_gen);
       (maybe_map (fun flag -> [| sprintf "--tty=%b" flag |]) cmd.tty);
       (maybe_map
          (function
@@ -348,10 +363,11 @@ let run_shell =
 
 let command
      ?add_host ?argv ?cap_add ?cap_drop ?device ?entrypoint ?env ?expose
-     ?hostname ?labels ?link ?memory ?name ?net ?privileged ?publish ?restart ?tty
+     ?hostname ?labels ?link ?memory ?name ?net ?privileged
+     ?publish ?publish_gen ?restart ?tty
      ?user ?volumes_from ?volumes image_id =
   {
     add_host; argv; cap_add; cap_drop; device; entrypoint; env; expose; hostname;
-    image_id; labels; link; memory; name; net; privileged; publish; restart; tty;
-    user; volumes_from; volumes;
+    image_id; labels; link; memory; name; net; privileged;
+    publish; publish_gen; restart; tty; user; volumes_from; volumes;
   }
