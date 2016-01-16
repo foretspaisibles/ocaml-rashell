@@ -59,7 +59,13 @@ val rmi : image_id list -> unit Lwt.t
 (** Remove an image, given its id. *)
 
 val restart : container_id list -> unit Lwt.t
-(** Restart a container, given its id. *)
+(** Restart containers, given their id. *)
+
+val pause : container_id list -> unit Lwt.t
+(** Pause containers, given their id. *)
+
+val unpause : container_id list -> unit Lwt.t
+(** Unpause containers, given their id. *)
 
 type command =
     {
