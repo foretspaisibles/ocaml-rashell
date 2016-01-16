@@ -223,6 +223,12 @@ let rmi lst =
 let restart lst =
   _exec [| "restart" |] lst
 
+let pause lst =
+  _exec [| "pause" |] lst
+
+let unpause lst =
+  _exec [| "unpause" |] lst
+
 let maybe_get = function
   | None -> [| |]
   | Some(array) -> array
