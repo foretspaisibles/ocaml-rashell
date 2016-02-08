@@ -26,6 +26,7 @@ type restart_policy =
   | Restart_No
   | Restart_Always
   | Restart_On_failure of int
+  | Restart_Unless_Stopped
 
 type user = User_ID of int | User_Name of string
 
@@ -302,6 +303,7 @@ let _run funcname exec detach interactive cmd =
          (function
            | Restart_No -> [| "--restart=no" |]
            | Restart_Always -> [| "--restart=always" |]
+           | Restart_Unless_Stopped -> [| "--restart=unless-stopped" |]
            | Restart_On_failure(0) -> [| "--restart=on-failure" |]
            | Restart_On_failure(n) -> [| sprintf "--restart=on-failure:%d" n |])
          cmd.restart);
