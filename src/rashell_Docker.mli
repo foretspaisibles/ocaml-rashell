@@ -20,6 +20,7 @@ type restart_policy =
   | Restart_No
   | Restart_Always
   | Restart_On_failure of int
+  | Restart_Unless_Stopped
 
 type user = User_ID of int | User_Name of string
 
