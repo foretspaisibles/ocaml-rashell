@@ -122,6 +122,12 @@ val command :
   image_id ->
   command
 
+val create : command -> container_id Lwt.t
+(** Create a new container. *)
+
+val start : container_id list -> bool Lwt.t
+(** Start one or more containers. *)
+
 val run : command -> container_id Lwt.t
 (** Start a container in detached mode, the returned string is the
     container id. *)
