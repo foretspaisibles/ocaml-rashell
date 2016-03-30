@@ -87,8 +87,18 @@ let image_keyword = [
   "TAG";
   "IMAGE ID";
   "CREATED";
-  "VIRTUAL SIZE";
+  "\\(VIRTUAL \\)?SIZE";
 ]
+
+let image_keyword_map =
+  [
+    "REPOSITORY",   "REPOSITORY";
+    "TAG",          "TAG";
+    "IMAGE ID",     "IMAGE ID";
+    "CREATED",      "CREATED";
+    "VIRTUAL SIZE", "SIZE";
+    "SIZE",         "SIZE";
+  ]
 
 type field = {
   field_name: string;
@@ -101,19 +111,23 @@ let error fmt =
 
 let field_make kwlist header =
   let open Str in
-  let pat =
-    regexp ("\\(" ^ (String.concat "\\|" kwlist) ^ "\\)\\( *\\)")
-  in
+  let pat  = regexp ("\\(" ^ (String.concat "\\|" kwlist) ^ "\\)") in
+  let pat2 = regexp "\\( *\\)" in
   let rec loop ax i =
     match string_match pat header i, i = String.length header with
     | false, false -> error "field_make: Protocol mismatch."
     | false, true -> ax
     | true, _ ->
+        let orig_name = matched_group 1 header in
+        let field_name =
+          try List.assoc orig_name image_keyword_map
+          with Not_found -> orig_name in
+        let _ = string_match pat2 header (i + String.length orig_name) in
         let field = {
-          field_name = matched_group 1 header;
+          field_name;
           field_position = i;
           field_width =
-            if matched_group 2 header = "" then
+            if matched_group 1 header = "" then
               None
             else
               Some (match_end () - 1 - i)
