@@ -121,9 +121,9 @@ increase rapidly.
 ## Free software
 
 Rashell is free software: copying it and redistributing it is
-very much welcome under conditions of the [CeCILL-B][licence-url]
-licence agreement, found in the [COPYING][licence-en] and
-[COPYING-FR][licence-fr] files of the distribution.
+very much welcome under conditions of the [MIT][license-url]
+license agreement, found in the [LICENSE][license-en]
+file of the distribution.
 
 
 ## Setup guide
@@ -173,9 +173,8 @@ Step 7 requires that you can `su -` if you are not already `root`.
 Michael Grünewald in Bonn, on September 5, 2015
 
 
-  [licence-url]:        http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
-  [licence-en]:         COPYING
-  [licence-fr]:         COPYING-FR
+  [license-url]:        https://opensource.org/licenses/MIT
+  [license-en]:         LICENSE
   [bsdowl-home]:        https://github.com/michipili/bsdowl
   [bsdowl-install]:     https://github.com/michipili/bsdowl/wiki/Install
   [lwt-home]:           http://ocsigen.org/lwt/
