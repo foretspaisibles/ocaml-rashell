@@ -6,4 +6,5 @@ repository:
   - broken
   - ocamlfind
   - lwt
+  - lemonade
   - mixture
