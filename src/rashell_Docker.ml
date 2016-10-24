@@ -26,8 +26,12 @@ type restart_policy =
   | Restart_No
   | Restart_Always
   | Restart_On_failure of int
+  | Restart_Unless_Stopped
 
 type user = User_ID of int | User_Name of string
+
+type address = string
+type ports   = Single of int | Range of int * int
 
 type volume_source =
   | Auto
@@ -57,8 +61,10 @@ type command =
       link         : string list option;
       memory       : int option;
       name         : string option;
+      net          : string option;
       privileged   : bool option;
       publish      : (int * int) list option;
+      publish_gen  : (address option * ports option * ports) list option;
       restart      : restart_policy option;
       tty          : bool option;
       user         : user option;
@@ -81,8 +87,18 @@ let image_keyword = [
   "TAG";
   "IMAGE ID";
   "CREATED";
-  "VIRTUAL SIZE";
+  "\\(VIRTUAL \\)?SIZE";
 ]
+
+let image_keyword_map =
+  [
+    "REPOSITORY",   "REPOSITORY";
+    "TAG",          "TAG";
+    "IMAGE ID",     "IMAGE ID";
+    "CREATED",      "CREATED";
+    "VIRTUAL SIZE", "SIZE";
+    "SIZE",         "SIZE";
+  ]
 
 type field = {
   field_name: string;
@@ -95,19 +111,23 @@ let error fmt =
 
 let field_make kwlist header =
   let open Str in
-  let pat =
-    regexp ("\\(" ^ (String.concat "\\|" kwlist) ^ "\\)\\( *\\)")
-  in
+  let pat  = regexp ("\\(" ^ (String.concat "\\|" kwlist) ^ "\\)") in
+  let pat2 = regexp "\\( *\\)" in
   let rec loop ax i =
     match string_match pat header i, i = String.length header with
     | false, false -> error "field_make: Protocol mismatch."
     | false, true -> ax
     | true, _ ->
+        let orig_name = matched_group 1 header in
+        let field_name =
+          try List.assoc orig_name image_keyword_map
+          with Not_found -> orig_name in
+        let _ = string_match pat2 header (i + String.length orig_name) in
         let field = {
-          field_name = matched_group 1 header;
+          field_name;
           field_position = i;
           field_width =
-            if matched_group 2 header = "" then
+            if matched_group 1 header = "" then
               None
             else
               Some (match_end () - 1 - i)
@@ -218,6 +238,12 @@ let rmi lst =
 let restart lst =
   _exec [| "restart" |] lst
 
+let pause lst =
+  _exec [| "pause" |] lst
+
+let unpause lst =
+  _exec [| "unpause" |] lst
+
 let maybe_get = function
   | None -> [| |]
   | Some(array) -> array
@@ -237,89 +263,107 @@ let string_of_volume_option = function
   | Relabel -> ":z"
   | Relabel_Private -> ":Z"
 
+let docker_args funcname cmd =
+  let open Printf in
+  maybe_concat [
+    (maybe_list
+       (fun (host, ip) -> [| "--add-host"; sprintf "%s:%s" host ip |])
+       cmd.add_host);
+    (maybe_list (fun cap -> [| "--cap-add"; cap |]) cmd.cap_add);
+    (maybe_list (fun cap -> [| "--cap-drop"; cap |]) cmd.cap_drop);
+    (maybe_list
+       (fun binding -> [| "--env"; binding |])
+       (match cmd.env with None -> None | Some(arr) -> Some(Array.to_list(arr))));
+    (maybe_list (fun dev -> [| "--device"; dev |]) cmd.device);
+    (maybe_map (fun cmd -> [| sprintf "--entrypoint=%s" cmd |]) cmd.entrypoint);
+    (maybe_list (fun spec -> [| sprintf "--expose=%d" spec |]) cmd.expose);
+    (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) cmd.hostname);
+    (maybe_list
+       (fun (k, v) -> [| sprintf "--label=%s=%s" k v |]) cmd.labels);
+    (maybe_list (fun container -> [| sprintf "--link=%s" container |]) cmd.link);
+    (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) cmd.memory);
+    (maybe_map (fun name -> [| sprintf "--name=%s" name |]) cmd.name);
+    (maybe_map (fun net -> [| sprintf "--net=%s" net |]) cmd.net);
+    (maybe_list
+       (fun (host, container) -> [| sprintf "--publish=%d:%d" host container |])
+       cmd.publish);
+    (maybe_list
+       (fun (addr, host, container) ->
+          let string_of_ports = function
+            | Single p -> string_of_int p
+            | Range (l, h) -> sprintf "%d-%d" l h
+          in
+            [| sprintf "--publish=%s:%s:%s"
+                 (match addr with Some s -> s | None -> "")
+                 (match host with Some h -> string_of_ports h | None -> "")
+                 (string_of_ports container) |])
+       cmd.publish_gen);
+    (maybe_map (fun flag -> [| sprintf "--tty=%b" flag |]) cmd.tty);
+    (maybe_map
+       (function
+          | User_ID uid -> [| sprintf "--user=%d" uid |]
+          | User_Name name -> [| sprintf "--user=%s" name |])
+       cmd.user);
+    (maybe_map (fun flag -> [| sprintf "--privileged=%b" flag |]) cmd.privileged);
+    (maybe_map
+       (function
+         | Restart_No -> [| "--restart=no" |]
+         | Restart_Always -> [| "--restart=always" |]
+         | Restart_Unless_Stopped -> [| "--restart=unless-stopped" |]
+         | Restart_On_failure(0) -> [| "--restart=on-failure" |]
+         | Restart_On_failure(n) -> [| sprintf "--restart=on-failure:%d" n |])
+       cmd.restart);
+    (maybe_list
+       (fun (src, dst, options) ->
+
+          (* TODO: should we check that
+           *   (a) the volume name is correct (alphanumeric
+           *       character, followed by [a-z0-9_.-]+)
+           *   (b) the source path exists
+           *
+           * or let docker run fail?
+           **)
+          if Filename.is_relative dst then
+            invalid_arg
+              (sprintf
+                 "Rashell_Docker.%s: volume destination is not absolute"
+                 funcname);
+
+          let vol = match src with
+            | Auto -> dst
+            | Named volname -> sprintf "%s:%s" volname dst
+            | Path src ->
+                if Filename.is_relative src then
+                  invalid_arg
+                    (sprintf
+                       "Rashell_Docker.%s: volume source is not absolute"
+                       funcname);
+                Printf.sprintf "%s:%s" src dst in
+
+          let suffix = String.concat ""
+                         (List.map string_of_volume_option options)
+          in
+            [| sprintf "--volume=%s%s" vol suffix |])
+       cmd.volumes);
+    (maybe_list
+       (fun container -> [| sprintf "--volumes-from=%s" container |])
+       cmd.volumes_from);
+    Some([| cmd.image_id |]);
+    cmd.argv
+  ]
+
 let _run funcname exec detach interactive cmd =
   let open Printf in
   let dockerargv =
-    maybe_concat [
-      Some([|
-          ac_path_docker;
-          "run";
-          sprintf "--detach=%b" detach;
-          sprintf "--interactive=%b" interactive;
-          sprintf "--rm=%b" (not detach);
-        |]);
-      (maybe_list
-         (fun (host, ip) -> [| "--add-host"; sprintf "%s:%s" host ip |])
-         cmd.add_host);
-      (maybe_list (fun cap -> [| "--cap-add"; cap |]) cmd.cap_add);
-      (maybe_list (fun cap -> [| "--cap-drop"; cap |]) cmd.cap_drop);
-      (maybe_list
-         (fun binding -> [| "--env"; binding |])
-         (match cmd.env with None -> None | Some(arr) -> Some(Array.to_list(arr))));
-      (maybe_list (fun dev -> [| "--device"; dev |]) cmd.device);
-      (maybe_map (fun cmd -> [| sprintf "--entrypoint=%s" cmd |]) cmd.entrypoint);
-      (maybe_list (fun spec -> [| sprintf "--expose=%d" spec |]) cmd.expose);
-      (maybe_map (fun spec -> [| sprintf "--hostname=%s" spec |]) cmd.hostname);
-      (maybe_list
-         (fun (k, v) -> [| sprintf "--label=%s=%s" k v |]) cmd.labels);
-      (maybe_list (fun container -> [| sprintf "--link=%s" container |]) cmd.link);
-      (maybe_map (fun spec -> [| sprintf "--memory=%dm" spec |]) cmd.memory);
-      (maybe_map (fun name -> [| sprintf "--name=%s" name |]) cmd.name);
-      (maybe_list
-         (fun (host, container) -> [| sprintf "--publish=%d:%d" host container |])
-         cmd.publish);
-      (maybe_map (fun flag -> [| sprintf "--tty=%b" flag |]) cmd.tty);
-      (maybe_map
-         (function
-            | User_ID uid -> [| sprintf "--user=%d" uid |]
-            | User_Name name -> [| sprintf "--user=%s" name |])
-         cmd.user);
-      (maybe_map (fun flag -> [| sprintf "--privileged=%b" flag |]) cmd.privileged);
-      (maybe_map
-         (function
-           | Restart_No -> [| "--restart=no" |]
-           | Restart_Always -> [| "--restart=always" |]
-           | Restart_On_failure(0) -> [| "--restart=on-failure" |]
-           | Restart_On_failure(n) -> [| sprintf "--restart=on-failure:%d" n |])
-         cmd.restart);
-      (maybe_list
-         (fun (src, dst, options) ->
-
-            (* TODO: should we check that
-             *   (a) the volume name is correct (alphanumeric
-             *       character, followed by [a-z0-9_.-]+)
-             *   (b) the source path exists
-             *
-             * or let docker run fail?
-             **)
-            if Filename.is_relative dst then
-              invalid_arg
-                (sprintf
-                   "Rashell_Docker.%s: volume destination is not absolute"
-                   funcname);
-
-            let vol = match src with
-              | Auto -> dst
-              | Named volname -> sprintf "%s:%s" volname dst
-              | Path src ->
-                  if Filename.is_relative src then
-                    invalid_arg
-                      (sprintf
-                         "Rashell_Docker.%s: volume source is not absolute"
-                         funcname);
-                  Printf.sprintf "%s:%s" src dst in
-
-            let suffix = String.concat ""
-                           (List.map string_of_volume_option options)
-            in
-              [| sprintf "--volume=%s%s" vol suffix |])
-         cmd.volumes);
-      (maybe_list
-         (fun container -> [| sprintf "--volumes-from=%s" container |])
-         cmd.volumes_from);
-      Some([| cmd.image_id |]);
-      cmd.argv
-    ]
+    Array.append
+      [|
+        ac_path_docker;
+        "run";
+        sprintf "--detach=%b" detach;
+        sprintf "--interactive=%b" interactive;
+        sprintf "--rm=%b" (not detach);
+      |]
+      (docker_args funcname cmd)
   in
   exec (command ("", dockerargv))
 
@@ -344,12 +388,34 @@ let run_test =
 let run_shell =
   __run "run_shell" exec_shell false true
 
+let create cmd =
+  let open Printf in
+  let dockerargv =
+    Array.append
+      [|
+        ac_path_docker;
+        "create";
+      |]
+      (docker_args "create" cmd)
+  in
+  exec_utility ~chomp:true (command ("", dockerargv))
+
+let start containers =
+  let open Printf in
+  let dockerargv =
+    Array.append
+      [| ac_path_docker; "start"; |]
+      (Array.of_list containers)
+  in
+  exec_test (command ("", dockerargv))
+
 let command
      ?add_host ?argv ?cap_add ?cap_drop ?device ?entrypoint ?env ?expose
-     ?hostname ?labels ?link ?memory ?name ?privileged ?publish ?restart ?tty
+     ?hostname ?labels ?link ?memory ?name ?net ?privileged
+     ?publish ?publish_gen ?restart ?tty
      ?user ?volumes_from ?volumes image_id =
   {
     add_host; argv; cap_add; cap_drop; device; entrypoint; env; expose; hostname;
-    image_id; labels; link; memory; name; privileged; publish; restart; tty; user;
-    volumes_from; volumes;
+    image_id; labels; link; memory; name; net; privileged;
+    publish; publish_gen; restart; tty; user; volumes_from; volumes;
   }

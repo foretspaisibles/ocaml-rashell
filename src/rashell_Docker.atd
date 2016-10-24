@@ -71,7 +71,38 @@ type container = {
   ?volumes			<json name="Volumes">:		(string * string) list <json repr="object"> nullable;
   ?volumes_rw			<json name="VolumesRW">:	(string * bool) list <json repr="object"> nullable;
   state				<json name="State">:		state;
+  ~mounts  <ocaml default="[]"> <json name="Mounts">:		mount list;
+  network_settings		<json name="NetworkSettings">:	netsetting;
 } <ocaml field_prefix="container_">
+
+type mount = {
+  source			<json name="Source">:		string;
+  destination			<json name="Destination">:	string;
+  rw				<json name="RW">:		bool;
+  (* mode				<json name="Mode">:		???; *)
+} <ocaml field_prefix="mount_">
+
+type netsetting = {
+  ~networks <ocaml default="[]"><json name="Networks">:		(string * network) list <json repr="object">;
+  ~ports <ocaml default="[]">	<json name="Ports">:		(string * port list nullable) list <json repr="object">;
+} <ocaml field_prefix="netsetting_">
+
+type network = {
+  gateway			<json name="Gateway">:		string;
+  ip_address			<json name="IPAddress">:	string;
+  ip_prefix_len			<json name="IPPrefixLen">:	int;
+  ipv6_gateway			<json name="IPv6Gateway">:	string;
+  global_ipv6_address		<json name="GlobalIPv6Address">:string;
+  global_ipv6_prefix_len	<json name="GlobalIPv6PrefixLen">:int;
+  mac_address			<json name="MacAddress">:	string;
+} <ocaml field_prefix="net_">
+
+type port = {
+  host_ip			<json name="HostIp">:		string;
+  host_port			<json name="HostPort">:		string;
+} <ocaml field_prefix="port_">
 
 type containers = container list
 type images = image list
+
+(* vim: set ft=ocaml ts=8 noexpandtab: *)

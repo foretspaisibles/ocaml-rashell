@@ -20,8 +20,12 @@ type restart_policy =
   | Restart_No
   | Restart_Always
   | Restart_On_failure of int
+  | Restart_Unless_Stopped
 
 type user = User_ID of int | User_Name of string
+
+type address = string
+type ports   = Single of int | Range of int * int
 
 type volume_source =
   | Auto
@@ -56,7 +60,13 @@ val rmi : image_id list -> unit Lwt.t
 (** Remove an image, given its id. *)
 
 val restart : container_id list -> unit Lwt.t
-(** Restart a container, given its id. *)
+(** Restart containers, given their id. *)
+
+val pause : container_id list -> unit Lwt.t
+(** Pause containers, given their id. *)
+
+val unpause : container_id list -> unit Lwt.t
+(** Unpause containers, given their id. *)
 
 type command =
     {
@@ -74,8 +84,10 @@ type command =
       link         : string list option;
       memory       : int option;
       name         : string option;
+      net          : string option;
       privileged   : bool option;
       publish      : (int * int) list option;
+      publish_gen  : (address option * ports option * ports) list option;
       restart      : restart_policy option;
       tty          : bool option;
       user         : user option;
@@ -98,8 +110,10 @@ val command :
   ?link:string list ->
   ?memory:int ->
   ?name:string ->
+  ?net:string ->
   ?privileged:bool ->
   ?publish:(int*int)list ->
+  ?publish_gen:(address option * ports option * ports) list ->
   ?restart:restart_policy ->
   ?tty:bool ->
   ?user:user ->
@@ -107,6 +121,12 @@ val command :
   ?volumes:(volume_source * volume_mountpoint * volume_option list) list ->
   image_id ->
   command
+
+val create : command -> container_id Lwt.t
+(** Create a new container. *)
+
+val start : container_id list -> bool Lwt.t
+(** Start one or more containers. *)
 
 val run : command -> container_id Lwt.t
 (** Start a container in detached mode, the returned string is the
