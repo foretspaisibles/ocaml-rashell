@@ -1,9 +1,11 @@
 compiler:
   - 4.01.0
   - 4.02.3
+  - 4.03.0
 repository:
   - atdgen
   - broken
   - ocamlfind
   - lwt
+  - lemonade
   - mixture

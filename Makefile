@@ -25,7 +25,6 @@ SUBDIR=			testsuite
 EXTERNAL=		ocaml.findlib:broken
 EXTERNAL+=		ocaml.findlib:lemonade
 EXTERNAL+=		ocaml.findlib:lwt.unix
-EXTERNAL+=		ocaml.findlib:lwt.ppx
 EXTERNAL+=		ocaml.findlib:mixture
 EXTERNAL+=		ocaml.findlib:str
 EXTERNAL+=		ocaml.findlib:atdgen
