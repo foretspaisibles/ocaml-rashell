@@ -32,7 +32,7 @@ depends: [
   "mixture" {>= "0.2.0"}
 ]
 depexts: [
-  [["debian"] ["bmake"]]
-  [["ubuntu"] ["bmake"]]
-  [["osx" "macports"] ["bmake"]]
+  [["debian"] ["bmake" "autoconf"]]
+  [["ubuntu"] ["bmake" "autoconf"]]
+  [["osx" "macports"] ["bmake" "autoconf"]]
 ]
