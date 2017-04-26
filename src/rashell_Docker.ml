@@ -19,6 +19,16 @@ open Lwt.Infix
 
 module Pool = Set.Make(String)
 
+let failwith fmt =
+  Printf.ksprintf
+    (fun mesg -> Pervasives.failwith(__MODULE_NAME ^": "^ mesg))
+    fmt
+
+let lwt_failwith fmt =
+  Printf.ksprintf
+    (fun mesg -> Lwt.fail_with(__MODULE_NAME ^": "^ mesg))
+    fmt
+
 type image_id     = string
 type container_id = string
 
@@ -159,13 +169,13 @@ let to_alist name kwlist lst =
   | hd :: tl -> Lwt.return(
       List.map (field_extract (field_make kwlist hd)) tl
     )
-  | _ -> Lwt.fail_with("Rashell_Docker"^": "^name^": Protocol mismatch.")
+  | _ -> lwt_failwith "%s: Protocol mismatch." name
 
 let tags () =
   let triple_of_alist alist =
     let get field = List.assoc field alist in
     try (get "IMAGE ID", (get "REPOSITORY", get "TAG"))
-    with Not_found -> failwith("Rashell_Docker"^": images: Protocol mismatch.")
+    with Not_found -> failwith "images: Protocol mismatch."
   in
   let pack lst =
     let images =
@@ -189,8 +199,7 @@ let _inspect of_json lst =
     try Lwt.return(of_json s)
     with Ag_oj_run.Error(mesg) | Yojson.Json_error(mesg) ->
       prerr_endline s;
-      Printf.ksprintf Lwt.fail_with "%s._inspect: %S: %s"
-        "Rashell_Docker" s mesg
+      lwt_failwith "_inspect: %S: %s" s mesg
   in
   if lst = [] then
     Lwt.return []
