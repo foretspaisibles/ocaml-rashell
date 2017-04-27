@@ -14,9 +14,10 @@
 open Broken
 open Rashell_Broken
 open Rashell_Posix
+open Rashell_Command
 open Lwt.Infix
 
-let test_environment () =
+let assert_environment =
   let open Rashell_Command in
   assert_utility "env"
     (fun s -> s = "Rashell")
@@ -26,7 +27,17 @@ let test_environment () =
             ~env:[| "RASHELL_COOKIE=Rashell" |]
             ("", [| "sh"; "-c"; "printf '%s' \"${RASHELL_COOKIE}\"" |])))
 
-let () =
-  make_suite "command" "Test suite for command funcitonalities"
-  |& test_environment ()
-  |> register
+let assert_script label ?expected_failure cmd expected_output =
+  let open Rashell_Command in
+  assert_utility label
+    (fun s -> s = expected_output)
+    (fun () ->
+       exec_utility
+         (command ("", [| "sh"; "-c"; to_script cmd |])))
+
+let () = register_suite "command" "Test suite for command funcitonalities" [
+    assert_environment;
+    assert_script "echo"
+      (command ("", [| "printf"; "%s\\n"; "\o001\o002A" |]))
+      "\o001\o002A\n"
+  ]

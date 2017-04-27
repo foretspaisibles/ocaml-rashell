@@ -52,3 +52,6 @@ val ac_path_rm : string
 
 val ac_path_sed : string
 (** The compile-time path to the sed program. *)
+
+val ac_path_ssh : string
+(** The compile-time path to the ssh program. *)

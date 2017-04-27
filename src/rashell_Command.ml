@@ -382,3 +382,57 @@ end
 
 let string_match_glob pattern text =
   Glob.string_match pattern text
+
+let bquote buf text =
+  let open Printf in
+  let is_safe_character = function
+    | '\o000' .. '\o037' | ' ' | '%' | '"' | '\\' | '\o047' | '\o177' .. '\o377' -> false
+    | _ -> true
+  in
+  let is_safe_string s =
+    let n = String.length s in
+    let rec loop i =
+      if i >= n then
+        true
+      else is_safe_character s.[i] && loop (i+1)
+    in
+    loop 0
+  in
+  let bquote_char buf c =
+    if is_safe_character c then
+      bprintf buf "%c" c
+    else
+      bprintf buf "\\%03o" (Char.code c)
+  in
+  let bquote_printf buf text =
+    bprintf buf "\o042$(printf '";
+    String.iter (fun char -> bquote_char buf char) text;
+    bprintf buf "')\o042";
+  in
+  if text = "" then
+    bprintf buf "\o042\o042"
+  else if is_safe_string text then
+    bprintf buf "%s" text
+  else
+    bquote_printf buf text
+
+let to_script { program; argv; env; workdir; } =
+  let open Printf in
+  let buf = Buffer.create 1000 in
+  begin match workdir with
+    | Some(actualdir) -> bprintf buf "cd %a && " bquote actualdir
+    | None -> ()
+  end;
+  begin match env with
+    | Some(actualenv) -> begin
+        bprintf buf "/bin/env -i";
+        Array.iter (fun binding -> bprintf buf " %a" bquote binding) actualenv;
+        bprintf buf " "
+      end
+    | None -> ()
+  end;
+  bprintf buf "%a" bquote (if program = "" then argv.(0) else program);
+  for i = 1 to Array.length argv - 1 do
+    bprintf buf " %a" bquote argv.(i)
+  done;
+  Buffer.contents buf

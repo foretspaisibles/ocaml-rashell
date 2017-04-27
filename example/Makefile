@@ -21,6 +21,10 @@ PROGRAM+=		example_docker
 PROGRAM+=		example_git
 .endif
 
+.if empty(WITH_SSH:Mno)
+PROGRAM+=		example_ssh
+.endif
+
 install:
 	${NOP}
 

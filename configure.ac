@@ -85,6 +85,33 @@ AC_ARG_WITH([git],
     esac;],
   [WITH_GIT='no'; GIT='/nonexistant';])
 
+# SSH client
+#
+#   Support of SSH using the command line client
+
+AC_ARG_WITH([ssh],
+  [AS_HELP_STRING([--with-ssh],
+    [add SSH support through the command-line client.])],
+  [WITH_SSH=${with_ssh}
+    case $with_ssh in
+    no)
+      WITH_SSH='no'
+      SSH='/nonexistant'
+      ;;
+    yes)
+      AC_PATH_PROG_REQUIRE([SSH], [ssh])
+      WITH_SSH='yes'
+      ;;
+    *)
+      SSH="${with_ssh}"
+      WITH_SSH='yes'
+      ;;
+    esac;],
+  [AC_PATH_PROG([SSH], [ssh], [/nonexistant])
+   AS_IF([test "${SSH}" = '/nonexistant'], [WITH_SSH='no'], [WITH_SSH='yes'])])
+AC_SUBST([WITH_SSH])
+
+
 
 AC_CONFIG_FILES([Makefile.config src/rashell_Configuration.ml])
 AC_OUTPUT
