@@ -3,40 +3,56 @@
    Rashell (https://github.com/michipili/rashell)
    This file is part of Rashell
 
-   Copyright © 2015—2016 Michael Grünewald
+   Copyright © 2015—2017 Michael Grünewald
 
    This file must be used under the terms of the MIT license.
    This source file is licensed as described in the file LICENSE, which
    you should have received as part of this distribution. The terms
    are also available at
    https://opensource.org/licenses/MIT *)
+(** Interface to docker. *)
 
 open Rashell_Docker_t
 
-type image_id     = string
-type container_id = string
+type image_id = string
+(** The type of image ids in options for container execution. *)
 
+type container_id = string
+(** The type of container ids in options for container execution. *)
+
+(** The type of restart policies in options for container execution. *)
 type restart_policy =
   | Restart_No
   | Restart_Always
   | Restart_On_failure of int
   | Restart_Unless_Stopped
 
-type user = User_ID of int | User_Name of string
+(** The type of user identifier in options for container execution. *)
+type user =
+  | User_ID of int
+  | User_Name of string
 
+(** The type of network addresses in options for container execution. *)
 type address = string
-type ports   = Single of int | Range of int * int
 
+(** The type of network ports in options for container execution. *)
+type ports =
+  | Single of int
+  | Range of int * int
+
+(** The type of volume sources in options for container execution. *)
 type volume_source =
   | Auto
   | Named of string
   | Path of string
 
+(** The type of volumen options in options for container execution. *)
 type volume_option =
   | RO
   | Relabel
   | Relabel_Private
 
+(** The type of volume mount points in options for container execution. *)
 type volume_mountpoint = string
 
 val ps : unit -> container list Lwt.t
@@ -145,4 +161,5 @@ val run_test : command -> bool Lwt.t
     status as a predicate. *)
 
 val run_shell : command -> unit Lwt.t
-(** Start a custom shell in a container. *)
+(** Start a custom shell in a container. The resulting thread waits
+    for this shell to terminate.*)
