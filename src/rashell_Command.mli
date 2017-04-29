@@ -147,3 +147,6 @@ val pp_print_process_status : Format.formatter -> process_status -> unit
 
 val pp_print_command : Format.formatter -> t -> unit
 (** Pretty-printer for commands. *)
+
+val to_script : t -> string
+(** Convert the given command to an equivalent shell script. *)

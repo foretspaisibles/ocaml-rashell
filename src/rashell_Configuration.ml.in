@@ -52,3 +52,6 @@ let ac_path_rm =
 
 let ac_path_sed =
   "@SED@"
+
+let ac_path_ssh =
+  "@SSH@"

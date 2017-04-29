@@ -49,6 +49,10 @@ CLEANFILES+=		${atdgen}_j.ml
 SRCS+=			rashell_Git.ml
 .endif
 
+.if empty(WITH_SSH:Mno)
+SRCS+=			rashell_SSH.ml
+.endif
+
 .include "ocaml.lib.mk"
 
 ### End of file `Makefile'
