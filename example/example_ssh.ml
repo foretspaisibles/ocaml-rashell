@@ -15,7 +15,7 @@ open Lwt.Infix
 let uname =
   Rashell_Command.command ("", [| "uname"; "-a" |])
 
-let job hostname =
+let job1 hostname =
   let cmd =
     Rashell_SSH.command
       (Rashell_SSH.options hostname)
@@ -24,7 +24,11 @@ let job hostname =
   Rashell_Command.exec_query cmd
   |> Lwt_stream.iter_s Lwt_io.printl
 
+let job2 hostname =
+  Rashell_SSH.utility ~chomp:true (Rashell_SSH.options hostname) "uname -a"
+  >>= Lwt_io.printl
+
 let main hostnames =
-  Lwt.join (List.map job hostnames)
+  Lwt.join (List.map job1 hostnames)
 
 let () = Lwt_main.run (main (List.tl (Array.to_list Sys.argv)))

@@ -10,6 +10,7 @@
    you should have received as part of this distribution. The terms
    are also available at
    https://opensource.org/licenses/MIT *)
+open Lwt.Infix
 
 type options = {
   hostname:string;
@@ -143,3 +144,16 @@ let ssh_argv {
 let command ({ workdir; env;} as options) rashell_command =
   Rashell_Command.command ?workdir ?env
     ("", ssh_argv options rashell_command)
+
+let query options shscript =
+  let cmd = command options (Rashell_Command.command ("", [| "/bin/sh" |])) in
+  let lines = Lwt_stream.of_list[shscript] in
+  Rashell_Command.exec_filter cmd lines
+
+let utility ?(chomp = false) options shscript =
+  let buf = Buffer.create 1000 in
+  Lwt_stream.iter
+    (fun line -> Buffer.add_string buf line)
+    (query options shscript)
+  >|= (fun () -> Buffer.contents buf)
+  >|= (fun text -> if chomp then Rashell_Command.chomp text else text)

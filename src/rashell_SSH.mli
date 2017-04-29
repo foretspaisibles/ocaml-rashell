@@ -41,3 +41,11 @@ val options : ?config_file:string -> ?stdin_null:bool -> ?fork_after_authenticat
 val command : options -> Rashell_Command.t -> Rashell_Command.t
 (** [command (program, argv)] prepare a command description with the
     given [program] and argument vector [argv]. *)
+
+(** {6 Remote shell specialities} *)
+
+val query : options -> string -> string Lwt_stream.t
+(** [query shscript] run the given shell script as a remote query. *)
+
+val utility : ?chomp:bool -> options -> string -> string Lwt.t
+(** [utility shscript] run the given shell script as a remote utility. *)
